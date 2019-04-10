@@ -36,56 +36,56 @@ void ConfigHandler::handleCommand(tstring command, tstring value) {
 		double convertedDouble;
 
 		tss >> convertedDouble;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setBonusDropRate(convertedDouble);
 		}
 	}
 	else if (command == CommandConstants::levelCount)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setLevelCount(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::maxLives)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setInitialLives(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::movementSpeed)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setMovementSpeed(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::playerCount)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setMaxPlayerCount(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::slowDown)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setSlowDownCount(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::speedUp)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setSpeedUpCount(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::tileCount)
 	{
 		tss >> convertedValue;
-		if (tss.good()) {
+		if (!tss.fail()) {
 			config.setInitialTileCount(convertedValue);
 		}
 	}
