@@ -115,14 +115,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommandConstants.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="GameConfig.cpp" />
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CommandConstants.h" />
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="GameConfig.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="UnicodeConfigs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

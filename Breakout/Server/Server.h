@@ -6,14 +6,6 @@
 #include <iostream>
 #include <string>
 
-#ifdef UNICODE
-#define tcout wcout
-#define tcin wcin
-#define tstring wstring
-#else
-#define tcout cout
-#define tcin cin
-#define tstring string
-#endif
+#include "UnicodeConfigs.h"
 
 using namespace std;

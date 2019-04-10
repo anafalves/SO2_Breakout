@@ -3,16 +3,6 @@
 #include <tchar.h>
 #include <fcntl.h>
 #include <io.h>
-#include <iostream>
-#include <string>
-
-#ifdef UNICODE
-#define tstring wstring
-#else
-#define tstring string
-#endif
-
-using namespace std;
 
 enum GameConfigDefaults {
 	DEFAULT_PLAYER_COUNT = 10,
@@ -34,7 +24,7 @@ private:
 	int initialLives;
 	int initialTileCount;
 	int movementSpeed; // TODO: player movement speed or tiles movement speed?
-	int bonusDropRate;
+	double bonusDropRate;
 
 public:
 	GameConfig();
@@ -46,7 +36,7 @@ public:
 	int getInitialLives() const;
 	int getInitialTileCount() const;
 	int getMovementSpeed() const;
-	int getBonusDropRate() const;
+	double getBonusDropRate() const;
 
 	bool setInitialLives(int lives);
 	bool setInitialTileCount(int tileCount);
@@ -55,5 +45,5 @@ public:
 	bool setMovementSpeed(int speed);
 	bool setSlowDownCount(int count);
 	bool setSpeedUpCount(int count);
-	bool setBonusDropRate(int rate);
+	bool setBonusDropRate(double rate);
 };

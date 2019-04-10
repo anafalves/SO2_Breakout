@@ -1,5 +1,5 @@
-#include "ConfigHandler.h"
 #include "Server.h"
+#include "ConfigHandler.h"
 
 int _tmain(int argc, TCHAR **argv) {
 
@@ -9,12 +9,13 @@ int _tmain(int argc, TCHAR **argv) {
 	#endif
 
 	if (argc != 2) {
-		_tprintf(TEXT("Argument count invalid!\n"));
-		_tprintf(TEXT("Usage: Server My/File/Path/filename.txt\n"));
+		tcout << TEXT("Argument count invalid!") << endl;
+		tcout << TEXT("Usage: Server My/File/Path/filename.txt") << endl;
 		return -1;
 	}
-
-	GameConfig cfg;
+	GameConfig config;
+	ConfigHandler a(config, argv[1]);
+	a.importConfigs();
 
 	return 0;
 }

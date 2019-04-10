@@ -1,21 +1,22 @@
 #pragma once
 #include <iostream>
-#include <io.h>
-#include <tchar.h>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include "UnicodeConfigs.h"
+#include "CommandConstants.h"
 #include "GameConfig.h"
 
 using namespace std;
-
 class ConfigHandler
 {
 private:
-	TCHAR fileName;
-	GameConfig config;
+	tstring filename;
+	GameConfig& config;
 
+	void handleCommand(tstring command, tstring value);
 public:
-	ConfigHandler(TCHAR filepath)
-		:fileName(filepath)
-	{}
-	
-	bool ImportConfigs();
+	ConfigHandler(GameConfig& cfg, tstring filename);
+	void importConfigs();
 };

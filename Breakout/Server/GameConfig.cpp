@@ -4,7 +4,7 @@ GameConfig::GameConfig()
 	:maxPlayerCount(DEFAULT_PLAYER_COUNT), levelCount(DEFAULT_LEVEL_COUNT),
 	speedUpCount(DEFAULT_SPEEDUP_COUNT), slowDownCount(DEFAULT_SLOWDOWN_COUNT),
 	initialLives(DEFAULT_LIVES_COUNT), initialTileCount(DEFAULT_TILE_COUNT),
-	movementSpeed(DEFAULT_MOVEMENT_SPEED), bonusDropRate(DEFAULT_BONUS_RATE)
+	movementSpeed(DEFAULT_MOVEMENT_SPEED), bonusDropRate(DEFAULT_BONUS_RATE / 100.0)
 {}
 
 //Getters
@@ -36,7 +36,7 @@ int GameConfig::getSpeedUpCount() const {
 	return speedUpCount;
 }
 
-int GameConfig::getBonusDropRate() const {
+double GameConfig::getBonusDropRate() const {
 	return bonusDropRate;
 }
 
@@ -98,8 +98,8 @@ bool GameConfig::setSpeedUpCount(int count) {
 	return true;
 }
 
-bool GameConfig::setBonusDropRate(int rate) {
-	if (rate < 0 || rate > 100)
+bool GameConfig::setBonusDropRate(double rate) {
+	if (rate < 0 || rate > 1)
 		return false;
 
 	bonusDropRate = rate;
