@@ -5,6 +5,7 @@
 #define tstring wstring
 #define tifstream wifstream
 #define tofstream wofstream
+#define tostream wostream
 #define tstringstream wstringstream
 #define tistringstream wistringstream
 #define tostringstream wostringstream
@@ -14,6 +15,7 @@
 #define tstring string
 #define tifstream ifstream
 #define tofstream ofstream
+#define tostream ostream
 #define tstringstream stringstream
 #define tistringstream istringstream
 #define tostringstream ostringstream

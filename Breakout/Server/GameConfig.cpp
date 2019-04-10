@@ -105,3 +105,19 @@ bool GameConfig::setBonusDropRate(double rate) {
 	bonusDropRate = rate;
 	return true;
 }
+
+tostream& operator << (tostream& tos, const GameConfig& cfg) {
+	tstringstream tss;
+
+	tss << TEXT("Number of slow-downs: ") << cfg.getSlowDownCount() << endl;
+	tss << TEXT("Number of speed-ups: ") << cfg.getSpeedUpCount() << endl;
+	tss << TEXT("Number of Levels: ") << cfg.getLevelCount() << endl;
+	tss << TEXT("Number of Tiles: ") << cfg.getInitialTileCount() << endl;
+	tss << TEXT("Number of Lives: ") << cfg.getInitialLives() << endl;
+	tss << TEXT("Bonus Drop Rate: ") << cfg.getBonusDropRate() << endl;
+	tss << TEXT("Movement Speed: ") << cfg.getMovementSpeed() << endl;
+	tss << TEXT("Max players: ") << cfg.getMaxPlayerCount() << endl;
+
+	tos << tss.str();
+	return tos;
+}

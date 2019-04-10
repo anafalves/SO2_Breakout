@@ -17,5 +17,7 @@ int _tmain(int argc, TCHAR **argv) {
 	ConfigHandler a(config, argv[1]);
 	a.importConfigs();
 
+	tcout << config;
+
 	return 0;
 }

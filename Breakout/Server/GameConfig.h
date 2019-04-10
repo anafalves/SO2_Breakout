@@ -3,6 +3,11 @@
 #include <tchar.h>
 #include <fcntl.h>
 #include <io.h>
+#include <ostream>
+#include <sstream>
+#include "UnicodeConfigs.h"
+
+using namespace std;
 
 enum GameConfigDefaults {
 	DEFAULT_PLAYER_COUNT = 10,
@@ -47,3 +52,5 @@ public:
 	bool setSpeedUpCount(int count);
 	bool setBonusDropRate(double rate);
 };
+
+tostream& operator<< (tostream& tos, const GameConfig& cfg);
