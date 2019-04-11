@@ -1,6 +1,7 @@
 #include "Server.h"
 #include "ConfigHandler.h"
 
+//TODO: this needs to become a class and a MAIN FILE MUST BE CREATED to start the server
 int _tmain(int argc, TCHAR **argv) {
 
 	#ifdef UNICODE

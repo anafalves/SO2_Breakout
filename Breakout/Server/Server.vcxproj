@@ -115,16 +115,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Client.cpp" />
     <ClCompile Include="CommandConstants.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="GameConfig.cpp" />
+    <ClCompile Include="SharedMemoryConstants.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="ServerComm.cpp" />
+    <ClCompile Include="ServerManager.cpp" />
+    <ClCompile Include="SharedMemoryManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Client.h" />
     <ClInclude Include="CommandConstants.h" />
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="GameConfig.h" />
+    <ClInclude Include="GameData.h" />
+    <ClInclude Include="Messages.h" />
+    <ClInclude Include="SharedMemoryConstants.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="ServerComm.h" />
+    <ClInclude Include="ServerManager.h" />
+    <ClInclude Include="SharedMemoryManager.h" />
     <ClInclude Include="UnicodeConfigs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
