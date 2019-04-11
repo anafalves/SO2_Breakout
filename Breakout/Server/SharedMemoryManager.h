@@ -7,24 +7,25 @@
 class SharedMemoryManager
 {
 private:
-	GameData * viewGameData;
-	MessageBuffer * viewServerBuffer;
-	MessageBuffer * viewClientBuffer;
-	
 	HANDLE hGameData;
-
 	HANDLE hServerBuffer;
-	HANDLE hServerSemEmpty;
-	HANDLE hServerSemFilled;
-
 	HANDLE hClientBuffer;
-	HANDLE hClientSemEmpty;
-	HANDLE hClientSemFilled;
 
 	void initSharedMemory();
 	void initSemaphores();
 	void initGameData();
+
 public:
+	GameData * viewGameData;
+	MessageBuffer * viewServerBuffer;
+	MessageBuffer * viewClientBuffer;
+
+	HANDLE hServerSemEmpty;
+	HANDLE hServerSemFilled;
+
+	HANDLE hClientSemEmpty;
+	HANDLE hClientSemFilled;
+
 	SharedMemoryManager();
 	~SharedMemoryManager();
 };
