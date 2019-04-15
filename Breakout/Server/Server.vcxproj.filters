@@ -19,11 +19,17 @@
     <Filter Include="Header Files\Communication">
       <UniqueIdentifier>{71360427-cd5a-41fb-a015-4c4b8fc32dbf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\GameData">
-      <UniqueIdentifier>{7678d25b-8623-48a3-9fcf-553d6bd80fdb}</UniqueIdentifier>
+    <Filter Include="Source Files\Game">
+      <UniqueIdentifier>{1a0f0748-e0e3-4979-a2a6-a602a5a482a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\GameData">
+    <Filter Include="Source Files\Game\GameData">
       <UniqueIdentifier>{f03043fa-f190-48e5-b0ac-af511ab644b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Game">
+      <UniqueIdentifier>{59a9aa2b-f150-47ce-b7ce-235f4970239a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Game\GameData">
+      <UniqueIdentifier>{7678d25b-8623-48a3-9fcf-553d6bd80fdb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -49,10 +55,13 @@
       <Filter>Source Files\Communication</Filter>
     </ClCompile>
     <ClCompile Include="SharedMemoryManager.cpp">
-      <Filter>Source Files\GameData</Filter>
+      <Filter>Source Files\Game\GameData</Filter>
     </ClCompile>
     <ClCompile Include="SharedMemoryConstants.cpp">
       <Filter>Source Files\Communication</Filter>
+    </ClCompile>
+    <ClCompile Include="GameThreads.cpp">
+      <Filter>Source Files\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -81,16 +90,19 @@
       <Filter>Header Files\Communication</Filter>
     </ClInclude>
     <ClInclude Include="GameData.h">
-      <Filter>Header Files\GameData</Filter>
+      <Filter>Header Files\Game\GameData</Filter>
     </ClInclude>
     <ClInclude Include="SharedMemoryManager.h">
-      <Filter>Header Files\GameData</Filter>
+      <Filter>Header Files\Game\GameData</Filter>
     </ClInclude>
     <ClInclude Include="Messages.h">
       <Filter>Header Files\Communication</Filter>
     </ClInclude>
     <ClInclude Include="SharedMemoryConstants.h">
       <Filter>Header Files\Communication</Filter>
+    </ClInclude>
+    <ClInclude Include="GameThreads.h">
+      <Filter>Header Files\Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
