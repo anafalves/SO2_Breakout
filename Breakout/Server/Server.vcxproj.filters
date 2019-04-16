@@ -31,18 +31,15 @@
     <Filter Include="Header Files\Game\GameData">
       <UniqueIdentifier>{7678d25b-8623-48a3-9fcf-553d6bd80fdb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\GameConfigs">
+      <UniqueIdentifier>{fbd647ab-454f-4e11-9907-41b69730b927}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GameConfigs">
+      <UniqueIdentifier>{f753a542-f26c-4bb9-9583-5f2038afa857}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Server.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GameConfig.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConfigHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CommandConstants.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Client.cpp">
@@ -60,24 +57,27 @@
     <ClCompile Include="SharedMemoryConstants.cpp">
       <Filter>Source Files\Communication</Filter>
     </ClCompile>
-    <ClCompile Include="GameThreads.cpp">
+    <ClCompile Include="ThreadManager.cpp">
       <Filter>Source Files\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigHandler.cpp">
+      <Filter>Source Files\GameConfigs</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandConstants.cpp">
+      <Filter>Source Files\GameConfigs</Filter>
+    </ClCompile>
+    <ClCompile Include="GameConfig.cpp">
+      <Filter>Source Files\GameConfigs</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ConfigHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UnicodeConfigs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CommandConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Client.h">
@@ -101,8 +101,17 @@
     <ClInclude Include="SharedMemoryConstants.h">
       <Filter>Header Files\Communication</Filter>
     </ClInclude>
-    <ClInclude Include="GameThreads.h">
+    <ClInclude Include="ThreadManager.h">
       <Filter>Header Files\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandConstants.h">
+      <Filter>Header Files\GameConfigs</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigHandler.h">
+      <Filter>Header Files\GameConfigs</Filter>
+    </ClInclude>
+    <ClInclude Include="GameConfig.h">
+      <Filter>Header Files\GameConfigs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
