@@ -126,6 +126,7 @@
     <ClCompile Include="ServerComm.cpp" />
     <ClCompile Include="ServerManager.cpp" />
     <ClCompile Include="SharedMemoryManager.cpp" />
+    <ClCompile Include="Top10Manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
@@ -140,6 +141,7 @@
     <ClInclude Include="ServerComm.h" />
     <ClInclude Include="ServerManager.h" />
     <ClInclude Include="SharedMemoryManager.h" />
+    <ClInclude Include="Top10Manager.h" />
     <ClInclude Include="UnicodeConfigs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
