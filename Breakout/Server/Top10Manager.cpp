@@ -1,5 +1,4 @@
 #include "Top10Manager.h"
-#include <iostream>
 
 Top10Manager::Top10Manager()
 {
@@ -23,6 +22,7 @@ Top10Manager::Top10Manager()
 		RegSetValueEx(key, TEXT("Top10"), 0, REG_BINARY,(LPBYTE)&top10,sizeof(Top10));
 	}
 	else if (result == REG_OPENED_EXISTING_KEY) {
+		size = sizeof(top10);
 		RegQueryValueEx(key, TEXT("Top10"), NULL, NULL, (LPBYTE)&top10, &size);
 	}
 
@@ -49,11 +49,14 @@ void Top10Manager::addPlayer(Player & player) {
 	Place tempB = { 0 };
 	int i;
 
-	for (i = 9; i >= 0; i--) {
+	//if the player's points is not higher than the last place in the list then it does nothing
+	if (player.points < top10.position[9].points) {
+			return;
+	}
+
+	for (i = 8; i >= 0; i--) {
 		if (player.points < top10.position[i].points) {
-			//if the player's points is not higher than the last place in the list then it does nothing
-			if (i == 9)
-				return;
+			break;
 		}
 	}
 
@@ -62,7 +65,7 @@ void Top10Manager::addPlayer(Player & player) {
 	_tcscpy_s(top10.position[i].username, player.name);
 
 	//starts to iterate directly after the index of the new place
-	for (i = i + 1; i < 10; i++) {
+	for (i = i; i < 10; i++) {
 		tempB = top10.position[i];
 		top10.position[i] = tempA;
 		tempA = tempB;

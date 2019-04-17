@@ -126,11 +126,11 @@ void SharedMemoryManager::initSemaphores() {
 }
 
 //TODO: add constants to size of objects and check this out
+//TODO: remove these for autos and replace them by MEMSET
 void SharedMemoryManager::initGameData() {
 	//Ball Init
 	for (auto &x : viewGameData->balls) {
 		x.active = false;
-		x.heading = 0;
 		x.posX = 0;
 		x.posY = 0;
 		x.width = 0;
