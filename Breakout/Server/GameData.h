@@ -2,7 +2,7 @@
 enum Constants {
 	MAX_PLAYERS = 20,
 	MAX_BONUSES = 50,
-	MAX_BALLS = 100,
+	MAX_BALLS = 3,
 	MAX_TILES = 1000
 };
 
@@ -18,7 +18,9 @@ typedef struct ball {
 	int posY;
 	int width;
 	int height;
-	int heading;
+	int playerId;
+	bool up;
+	bool right;
 	bool active;
 }Ball;
 
@@ -29,7 +31,9 @@ typedef struct player {
 	int height;
 	int points;
 	int lives;
+	int id;
 	bool active;
+	TCHAR name[50];
 }Player;
 
 typedef struct tile {
