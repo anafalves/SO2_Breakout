@@ -75,6 +75,9 @@
     <ClCompile Include="Top10Manager.cpp">
       <Filter>Source Files\Game</Filter>
     </ClCompile>
+    <ClCompile Include="GameDataManager.cpp">
+      <Filter>Source Files\Game\GameData</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -118,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="Top10Manager.h">
       <Filter>Header Files\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="GameDataManager.h">
+      <Filter>Header Files\Game\GameData</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

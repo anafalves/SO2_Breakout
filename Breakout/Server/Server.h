@@ -8,6 +8,8 @@
 #include "UnicodeConfigs.h"
 
 #include "ConfigHandler.h"
+#include "Top10Manager.h"
+#include "SharedMemoryManager.h"
 #include "GameConfig.h"
 
 using namespace std;
@@ -19,14 +21,14 @@ private:
 public:
 
 	static GameConfig config;
+	static Top10Manager topPlayers;
+	static SharedMemoryManager sharedMemory;
 
 	Server(tstring fileName) {
 		//TODO: Verify if file exists, if not server closes indication error.
 		//TODO: Make a start function instead ???
 		ConfigHandler a(config, fileName);
 		a.importConfigs();
-
-		//tcout << config;
 
 		//TODO: Call Connection Handler to startup connection threads and services
 	};

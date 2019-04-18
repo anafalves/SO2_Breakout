@@ -3,7 +3,6 @@
 SharedMemoryManager::SharedMemoryManager()
 {
 	initSharedMemory();
-	initGameData();
 	initSemaphores();
 }
 
@@ -88,6 +87,11 @@ void SharedMemoryManager::initSharedMemory() {
 		this->~SharedMemoryManager();
 		throw TEXT("couldn't create map view of file for GameData!");
 	}
+	
+	//Set all newly allocated shared memory to 0 ( clear memory )
+	memset(viewGameData, 0, sizeof(GameData));
+	memset(viewClientBuffer, 0, sizeof(MessageBuffer));
+	memset(viewServerBuffer, 0, sizeof(MessageBuffer));
 }
 
 void SharedMemoryManager::initSemaphores() {
@@ -122,50 +126,5 @@ void SharedMemoryManager::initSemaphores() {
 	{
 		this->~SharedMemoryManager();
 		throw TEXT("Error while trying to create ClientSemaphore filled");
-	}
-}
-
-//TODO: add constants to size of objects and check this out
-//TODO: remove these for autos and replace them by MEMSET
-void SharedMemoryManager::initGameData() {
-	//Ball Init
-	for (auto &x : viewGameData->balls) {
-		x.active = false;
-		x.posX = 0;
-		x.posY = 0;
-		x.width = 0;
-		x.height = 0;
-	}
-
-	//Tile Init
-	for (auto &x : viewGameData->tiles) {
-		x.active = false;
-		x.bonus = false;
-		x.resistance = 0;
-		x.posX = 0;
-		x.posY = 0;
-		x.width = 0;
-		x.height = 0;
-	}
-
-	//Bonuses init
-	for (auto &x : viewGameData->bonuses) {
-		x.active = false;
-		x.type = 0;
-		x.posX = 0;
-		x.posY = 0;
-		x.width = 0;
-		x.height = 0;
-	}
-
-	//Player init
-	for (auto &x : viewGameData->players) {
-		x.active = false;
-		x.lives = 0;
-		x.points = 0;
-		x.posX = 0;
-		x.posY = 0;
-		x.width = 0;
-		x.height = 0;
 	}
 }

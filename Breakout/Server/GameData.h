@@ -13,6 +13,9 @@ enum BonusType {
 	TRIPLE
 };
 
+//TODO: Add enum with default sizes for objects
+//TODO: Verify if these structures need to be changed
+
 typedef struct ball {
 	int posX;
 	int posY;
