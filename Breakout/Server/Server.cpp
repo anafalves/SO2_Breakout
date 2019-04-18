@@ -3,3 +3,4 @@
 
 GameConfig Server::config;
 Top10Manager Server::topPlayers;
+SharedMemoryManager Server::sharedMemory;

@@ -13,13 +13,14 @@ private:
 
 	void initSharedMemory();
 	void initSemaphores();
-	void initGameData();
 
 public:
 	GameData * viewGameData;
 	MessageBuffer * viewServerBuffer;
 	MessageBuffer * viewClientBuffer;
 
+	//TODO: Add trigger HANDLE that will be used as an EVENT for gameDataUpdates!
+	//HANDLE hUpdateEvent;
 	HANDLE hServerSemEmpty;
 	HANDLE hServerSemFilled;
 

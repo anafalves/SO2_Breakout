@@ -119,6 +119,7 @@
     <ClCompile Include="CommandConstants.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="GameConfig.cpp" />
+    <ClCompile Include="GameDataManager.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="SharedMemoryConstants.cpp" />
@@ -134,6 +135,7 @@
     <ClInclude Include="ConfigHandler.h" />
     <ClInclude Include="GameConfig.h" />
     <ClInclude Include="GameData.h" />
+    <ClInclude Include="GameDataManager.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="SharedMemoryConstants.h" />
