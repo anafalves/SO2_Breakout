@@ -7,14 +7,21 @@ enum ServerMessages {
 	ACCEPT = 0,
 	DENY_USERNAME,
 	DENY_SERVER_FULL,
-	GAMEDATA,
+	CLOSE,
+	//GAMEDATA,
 };
 
 enum ClientMessages {
 	LOGIN = 0,
 	TOP10,
 	LEAVE,
-	READY
+	MOVE,
+	//READY
+};
+
+enum CLientMoves {
+	LEFT = 0,
+	RIGHT
 };
 
 enum MessageConstants {
@@ -32,7 +39,22 @@ typedef struct {
 	Message message;
 }Carrier;
 
+typedef union {
+	TCHAR name[MAX_NAME_LENGHT];
+	CLientMoves move;
+}BufferContent;
+
+typedef struct{
+	ClientMessages msg_type;
+	BufferContent content;
+}ClientBufferCell;
+
 typedef struct {
-	Carrier buffer[MAX_MESSAGE_BUFFER_SIZE];
-	int in, out;
-}MessageBuffer;
+	ClientBufferCell cli_buffer[MAX_MESSAGE_BUFFER_SIZE];
+	int read_pos, write_pos;
+}ClientMsgBuffer;
+
+typedef struct {
+	ServerMessages serv_buffer[MAX_MESSAGE_BUFFER_SIZE];
+	int read_pos, write_pos;
+}ServerMsgBuffer;
