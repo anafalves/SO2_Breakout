@@ -6,7 +6,6 @@
 class GameDataManager
 {
 	GameData * gameData;
-	
 
 public:
 	GameDataManager(GameData * gdata) {
@@ -17,4 +16,6 @@ public:
 
 	//Sets initial values and positions of things, such as ball, players, etc.
 	void setupGameStart();
+	void setupBall();
+	bool moveActiveBalls();
 };

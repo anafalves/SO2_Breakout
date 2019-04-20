@@ -1,19 +1,22 @@
 #include "ThreadManager.h"
-
-void setupBall() { //TODO: isto deve ser feito pelo Game Manager que vai estar publico
-	//TODO: inicializa a bola entre os tiles e os jogadores
-	//TODO: faz random de que posição começa se é para esquerda ou direita
-}
+#include "Server.h"
 
 DWORD WINAPI BallManager(LPVOID args) {
-	setupBall();
 
+	bool CONTINUE = (bool)args;
+	CONTINUE = true;
+	int time = Server::config.getMovementSpeed() * 10;
+
+	Server::gameData.setupGameStart();
 	//TODO: sperar pelo semáforo / mutex de inicio do jogo para poder avançar
-	/*
-	while (TODO:  Criar variavel CONTINUE NO .h para poder parar a thread no fim do jogo )
-	{
 
-	}*/
+	while (CONTINUE)
+	{
+		Sleep(time);
+		Server::gameData.moveActiveBalls();
+
+	}
+
 	return 0;
 }
 
@@ -22,11 +25,10 @@ bool ThreadManager::startBallThread() {
 		return false;
 	}
 
-	hBallThread = CreateThread(nullptr, 0, BallManager, nullptr, 0, nullptr);
+	hBallThread = CreateThread(nullptr, 0, BallManager, (LPVOID) &ballThreadRunning, 0, nullptr);
 	if (hBallThread == nullptr) {
 		throw TEXT("Ball control thread couldn't be started!");
 	}
 
-	ballThreadRunning = true;
 	return true;
 }

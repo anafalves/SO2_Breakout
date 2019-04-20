@@ -1,7 +1,8 @@
 #pragma once
 #include <Windows.h>
 #include "UnicodeConfigs.h"
-#include "Server.h"
+
+class Server;
 
 class ThreadManager {
 private:
@@ -28,4 +29,7 @@ public:
 		CloseHandle(hBallThread);
 	}
 
+	void waitForBallThread() {
+		WaitForSingleObject(hBallThread, INFINITE);
+	}
 };
