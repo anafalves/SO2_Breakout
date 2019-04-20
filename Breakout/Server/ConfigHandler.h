@@ -18,5 +18,5 @@ private:
 	void handleCommand(tstring command, tstring value);
 public:
 	ConfigHandler(GameConfig& cfg, tstring filename);
-	void importConfigs();
+	int importConfigs();
 };

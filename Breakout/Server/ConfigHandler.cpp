@@ -4,13 +4,14 @@ ConfigHandler::ConfigHandler(GameConfig& cfg, tstring fname)
 	:config(cfg), filename(fname)
 {}
 
-void ConfigHandler::importConfigs() {
+int ConfigHandler::importConfigs() {
 	tifstream file(filename);
 	tstringstream tss;
 	tstring line, command, value;
 
-	if (!file.is_open())
-		throw TEXT("Could not open file Exception...");
+	if (!file.is_open()) {
+		return -1;
+	}
 
 	while (getline(file, line))
 	{
@@ -21,6 +22,7 @@ void ConfigHandler::importConfigs() {
 		handleCommand(command, value);
 	}
 	file.close();
+	return 0;
 }
 
 void ConfigHandler::handleCommand(tstring command, tstring value) {

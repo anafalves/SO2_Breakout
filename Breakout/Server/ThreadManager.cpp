@@ -27,7 +27,7 @@ bool ThreadManager::startBallThread() {
 
 	hBallThread = CreateThread(nullptr, 0, BallManager, (LPVOID) &ballThreadRunning, 0, nullptr);
 	if (hBallThread == nullptr) {
-		throw TEXT("Ball control thread couldn't be started!");
+		return false;
 	}
 
 	return true;

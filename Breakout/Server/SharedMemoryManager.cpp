@@ -2,10 +2,7 @@
 
 SharedMemoryManager::SharedMemoryManager()
 {
-	initSharedMemory();
-	initSemaphores();
 }
-
 
 SharedMemoryManager::~SharedMemoryManager()
 {
@@ -13,6 +10,7 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hServerSemFilled);
 	CloseHandle(hClientSemEmpty);
 	CloseHandle(hClientSemFilled);
+	CloseHandle(hUpdateEvent);
 
 	UnmapViewOfFile(viewClientBuffer);
 	UnmapViewOfFile(viewServerBuffer);
@@ -23,9 +21,9 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hGameData);
 }
 
-void SharedMemoryManager::initSharedMemory() {
+int SharedMemoryManager::initSharedMemory() {
 	LARGE_INTEGER size;
-	size.QuadPart = sizeof(MessageBuffer);
+	size.QuadPart = sizeof(ServerMsgBuffer);
 
 	//Server Message Buffer
 	hServerBuffer = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
@@ -34,18 +32,18 @@ void SharedMemoryManager::initSharedMemory() {
 	if (hServerBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create file mapping for server messageBuffer!");
+		return -1;
 	}
 
-	viewServerBuffer = (MessageBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_READ,
+	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
 						0, 0, (SIZE_T)size.QuadPart);
 	if (viewServerBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create map view of file for server messageBuffer!");
+		return -1;
 	}
 
-	viewServerBuffer->in = viewServerBuffer->out = 0;
+	viewServerBuffer->read_pos = viewServerBuffer->write_pos = 0;
 
 
 	//Local Client Message Buffer
@@ -55,19 +53,18 @@ void SharedMemoryManager::initSharedMemory() {
 	if (hClientBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create file mapping for client messageBuffer!");
+		return -1;
 	}
 
-	viewClientBuffer = (MessageBuffer *)MapViewOfFile(hClientBuffer,FILE_MAP_WRITE,
+	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer,FILE_MAP_WRITE,
 						0, 0, (SIZE_T)size.QuadPart);
 	if (viewClientBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create map view of file for client messageBuffer!");
+		return -1;
 	}
 
-	viewClientBuffer->in = viewClientBuffer->out = 0;
-
+	viewClientBuffer->read_pos = viewClientBuffer->write_pos = 0;
 
 	//GameData Shared memory
 	size.QuadPart = sizeof(GameData);
@@ -77,7 +74,7 @@ void SharedMemoryManager::initSharedMemory() {
 	if (hGameData == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create file mapping GameData!");
+		return -1;
 	}
 
 	viewGameData = (GameData *)MapViewOfFile(hGameData, FILE_MAP_WRITE | FILE_MAP_READ,
@@ -85,22 +82,28 @@ void SharedMemoryManager::initSharedMemory() {
 	if (viewGameData == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create map view of file for GameData!");
+		return -1;
 	}
 	
 	//Set all newly allocated shared memory to 0 ( clear memory )
 	memset(viewGameData, 0, sizeof(GameData));
-	memset(viewClientBuffer, 0, sizeof(MessageBuffer));
-	memset(viewServerBuffer, 0, sizeof(MessageBuffer));
+	memset(viewClientBuffer, 0, sizeof(ClientMsgBuffer));
+	memset(viewServerBuffer, 0, sizeof(ServerMsgBuffer));
+
+	if (initSemaphores() < 0) {
+		return -2;
+	}
+
+	return 0;
 }
 
-void SharedMemoryManager::initSemaphores() {
+int SharedMemoryManager::initSemaphores() {
 	hServerSemEmpty = CreateSemaphore(NULL, MAX_MESSAGE_BUFFER_SIZE, MAX_MESSAGE_BUFFER_SIZE,
 						SharedMemoryConstants::SEM_SERVER_EMPTY.c_str());
 	if (hServerSemEmpty == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ServerSemaphore empty");
+		return -1;
 	}
 
 	hServerSemFilled = CreateSemaphore(NULL, 0, MAX_MESSAGE_BUFFER_SIZE,
@@ -108,7 +111,7 @@ void SharedMemoryManager::initSemaphores() {
 	if (hServerSemFilled == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ServerSemaphore filled");
+		return -1;
 	}
 
 	hClientSemEmpty = CreateSemaphore(NULL, MAX_MESSAGE_BUFFER_SIZE, MAX_MESSAGE_BUFFER_SIZE,
@@ -116,15 +119,23 @@ void SharedMemoryManager::initSemaphores() {
 	if (hClientSemEmpty == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientSemaphore empty");
+		return -1;
 	}
-
 
 	hClientSemFilled = CreateSemaphore(NULL, 0, MAX_MESSAGE_BUFFER_SIZE,
 						SharedMemoryConstants::SEM_CLIENT_FILLED.c_str());
 	if (hClientSemFilled == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientSemaphore filled");
+		return -1;
 	}
+
+	hUpdateEvent = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_GAMEDATA_UPDATE.c_str());
+	if (hUpdateEvent == NULL)
+	{
+		this->~SharedMemoryManager();
+		return -1;
+	}
+
+	return 0;
 }

@@ -25,9 +25,8 @@ private:
 	Top10 top10;
 
 public:
-	Top10Manager();
-	~Top10Manager();
-
+	int loadTop10();
+	int saveTop10();
 	void addPlayer(Player & player);
 
 	Top10 getTop10() const {

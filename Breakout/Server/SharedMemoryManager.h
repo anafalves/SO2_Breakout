@@ -11,21 +11,26 @@ private:
 	HANDLE hServerBuffer;
 	HANDLE hClientBuffer;
 
-	void initSharedMemory();
-	void initSemaphores();
-
-public:
-	GameData * viewGameData;
-	MessageBuffer * viewServerBuffer;
-	MessageBuffer * viewClientBuffer;
-
-	//TODO: Add trigger HANDLE that will be used as an EVENT for gameDataUpdates!
-	//HANDLE hUpdateEvent;
+	HANDLE hUpdateEvent;
 	HANDLE hServerSemEmpty;
 	HANDLE hServerSemFilled;
 
 	HANDLE hClientSemEmpty;
 	HANDLE hClientSemFilled;
+
+	GameData * viewGameData;
+	ServerMsgBuffer * viewServerBuffer;
+	ClientMsgBuffer * viewClientBuffer;
+
+	int initSemaphores();
+
+public:
+
+	GameData * getGameData() const {
+		return viewGameData;
+	};
+
+	int initSharedMemory();
 
 	SharedMemoryManager();
 	~SharedMemoryManager();

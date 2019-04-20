@@ -63,8 +63,9 @@ void GameDataManager::setupBall() {
 	gameData->balls->right = true;
 }
 
-bool GameDataManager::moveActiveBalls() {
+void GameDataManager::moveActiveBalls() {
 	for (auto &ball : gameData->balls) {
+
 		if (!ball.active) {
 			continue;
 		}

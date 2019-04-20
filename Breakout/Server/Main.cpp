@@ -12,8 +12,10 @@ int _tmain(int argc, TCHAR **argv) {
 		tcout << TEXT("Usage: Server My/File/Path/filename.txt") << endl;
 		return -1;
 	}
-
-	Server server(argv[1]);
+	//TODO: Create interface class to display messages
+	if (Server::startServer(argv[1]) != 0) {
+		return -1;
+	}
 
 	return 0;
 }

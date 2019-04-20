@@ -1,25 +1,40 @@
 #include "Top10Manager.h"
 
-Top10Manager::Top10Manager()
-{
+int Top10Manager::saveTop10() {
 	HKEY key;
 	DWORD result;
-	DWORD size;
-	
+
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\SO2_Breakout"), 0, NULL,
 		REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key, &result) != ERROR_SUCCESS)
 	{
-		throw TEXT("Error while trying to create/open key (%d)\n"), GetLastError();
+		return -1;
 	}
 
-	if (result == REG_CREATED_NEW_KEY) 
+	RegSetValueEx(key, TEXT("Top10"), 0, REG_BINARY, (LPBYTE)&top10, sizeof(Top10));
+	RegCloseKey(key);
+
+	return 0;
+}
+
+int Top10Manager::loadTop10() {
+	HKEY key;
+	DWORD result;
+	DWORD size;
+
+	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\SO2_Breakout"), 0, NULL,
+		REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key, &result) != ERROR_SUCCESS)
+	{
+		return -1;
+	}
+
+	if (result == REG_CREATED_NEW_KEY)
 	{
 		for (auto &x : top10.position) {
 			x.points = 0;
 			_tcscpy_s(x.username, TEXT(""));
 		}
 
-		RegSetValueEx(key, TEXT("Top10"), 0, REG_BINARY,(LPBYTE)&top10,sizeof(Top10));
+		RegSetValueEx(key, TEXT("Top10"), 0, REG_BINARY, (LPBYTE)&top10, sizeof(Top10));
 	}
 	else if (result == REG_OPENED_EXISTING_KEY) {
 		size = sizeof(top10);
@@ -27,21 +42,7 @@ Top10Manager::Top10Manager()
 	}
 
 	RegCloseKey(key);
-}
-
-Top10Manager::~Top10Manager()
-{
-	HKEY key;
-	DWORD result;
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\SO2_Breakout"), 0, NULL,
-		REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key, &result) != ERROR_SUCCESS)
-	{
-		return;
-	}
-
-	RegSetValueEx(key, TEXT("Top10"), 0, REG_BINARY, (LPBYTE)&top10, sizeof(Top10));
-	RegCloseKey(key);
+	return 0;
 }
 
 void Top10Manager::addPlayer(Player & player) {
