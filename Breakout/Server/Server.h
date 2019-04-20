@@ -30,7 +30,11 @@ class Server {
 private:
 	
 	static bool isServerRunning() {
-		HANDLE check = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_GAMEDATA_UPDATE.c_str());
+		HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
+		if (!hEvent) {
+			return false;
+		}
+
 		if (GetLastError() == ERROR_ALREADY_EXISTS) {
 			return true;
 		}

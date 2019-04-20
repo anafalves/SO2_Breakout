@@ -130,7 +130,7 @@ int SharedMemoryManager::initSemaphores() {
 		return -1;
 	}
 
-	hUpdateEvent = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_GAMEDATA_UPDATE.c_str());
+	hUpdateEvent = CreateEvent(NULL,TRUE, FALSE, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
 	if (hUpdateEvent == NULL)
 	{
 		this->~SharedMemoryManager();
