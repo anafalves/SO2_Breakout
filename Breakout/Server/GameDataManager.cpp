@@ -1,16 +1,15 @@
 #include "GameDataManager.h"
 
 enum ScreenDimensions {
-	HEIGHT = 1080,
-	WIDTH = 1920
+	MIN_HEIGHT = 0,
+	MIN_WIDTH = 0,
+	MAX_HEIGHT = 1080,
+	MAX_WIDTH = 1920
 };
 
 void GameDataManager::setupGameStart()
 {
-	//Enable and set ball [0] in the center of the screen
-	gameData->balls->active = true;
-	gameData->balls->posX = WIDTH / 2;
-	gameData->balls->posY = HEIGHT / 2;
+	setupBall();
 
 
 	////Ball Init
@@ -53,4 +52,47 @@ void GameDataManager::setupGameStart()
 	//	x.width = 0;
 	//	x.height = 0;
 	//}
+}
+
+void GameDataManager::setupBall() {
+	//Enable and set ball [0] in the center of the screen
+	gameData->balls->active = true;
+	gameData->balls->posX = MAX_WIDTH / 2;
+	gameData->balls->posY = MAX_HEIGHT / 2;
+	gameData->balls->up = true;
+	gameData->balls->right = true;
+}
+
+bool GameDataManager::moveActiveBalls() {
+	for (auto &ball : gameData->balls) {
+		if (!ball.active) {
+			continue;
+		}
+
+		if (ball.up) {
+			ball.posY++;
+		}
+		else {
+			ball.posY--;
+		}
+
+		if (ball.right) {
+			ball.posX++;
+		}
+		else {
+			ball.posX--;
+		}
+
+
+		//Verify if ball is in one of the of the limits, so it can change position
+		if (ball.posX == MAX_WIDTH || ball.posX == MIN_WIDTH) {
+			ball.right = !ball.right;
+		}
+
+		if (ball.posY == MAX_HEIGHT || ball.posY == MIN_HEIGHT) {
+			ball.up = !ball.up;
+		}
+
+		//TODO: if ball hits lower limit, ball is lost, and players lose one life.
+	}
 }
