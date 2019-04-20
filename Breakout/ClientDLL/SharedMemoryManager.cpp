@@ -25,7 +25,7 @@ SharedMemoryManager::~SharedMemoryManager()
 
 void SharedMemoryManager::initSharedMemory() {
 	LARGE_INTEGER size;
-	size.QuadPart = sizeof(MessageBuffer);
+	size.QuadPart = sizeof(ServerMsgBuffer);
 
 	//Server Message Buffer
 	hServerBuffer = OpenFileMapping(PAGE_READWRITE, NULL,
@@ -37,7 +37,7 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create file mapping for server messageBuffer!");
 	}
 
-	viewServerBuffer = (MessageBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_WRITE,
+	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_WRITE,
 		0, 0, (SIZE_T)size.QuadPart);
 	if (viewServerBuffer == NULL)
 	{
@@ -45,10 +45,12 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create map view of file for server messageBuffer!");
 	}
 
-	viewServerBuffer->in = viewServerBuffer->out = 0;
+	viewServerBuffer->read_pos = viewServerBuffer->write_pos = 0;
 
 
 	//Local Client Message Buffer
+	size.QuadPart = sizeof(ClientMsgBuffer);
+
 	hClientBuffer = OpenFileMapping(PAGE_READONLY,NULL,
 		SharedMemoryConstants::SHA_MEM_CLIENT_BUFFER.c_str());
 
@@ -58,7 +60,7 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create file mapping for client messageBuffer!");
 	}
 
-	viewClientBuffer = (MessageBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ,
+	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ,
 		0, 0, (SIZE_T)size.QuadPart);
 	if (viewClientBuffer == NULL)
 	{
@@ -66,7 +68,7 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create map view of file for client messageBuffer!");
 	}
 
-	viewClientBuffer->in = viewClientBuffer->out = 0;
+	viewClientBuffer->read_pos = viewClientBuffer->write_pos = 0;
 
 
 	//GameData Shared memory

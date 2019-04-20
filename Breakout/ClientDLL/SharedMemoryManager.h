@@ -16,8 +16,8 @@ private:
 
 public:
 	GameData * viewGameData;
-	MessageBuffer * viewServerBuffer;
-	MessageBuffer * viewClientBuffer;
+	ClientMsgBuffer * viewClientBuffer;
+	ServerMsgBuffer * viewServerBuffer;
 
 	HANDLE hUpdateEvent;
 	HANDLE hServerSemEmpty;
@@ -25,6 +25,8 @@ public:
 
 	HANDLE hClientSemEmpty;
 	HANDLE hClientSemFilled;
+	HANDLE hClientReadMutex;
+	HANDLE hClientWriteMutex;
 
 	SharedMemoryManager();
 	~SharedMemoryManager();
