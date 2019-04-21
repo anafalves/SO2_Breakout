@@ -2,12 +2,15 @@
 #include <tchar.h>
 #include "GameData.h"
 #include "UnicodeConfigs.h"
+#include "Top10Manager.h"
 
 enum ServerMessages {
-	ACCEPT = 0,
+	INVALID = 0, //the msg is for other person
+	ACCEPT,
 	DENY_USERNAME,
 	DENY_SERVER_FULL,
 	CLOSE,
+	TOP10,
 	//GAMEDATA,
 };
 
@@ -45,16 +48,27 @@ typedef union {
 }BufferContent;
 
 typedef struct{
-	ClientMessages msg_type;
+	int type;
 	BufferContent content;
-}ClientBufferCell;
+}ClientMsg;
 
 typedef struct {
-	ClientBufferCell cli_buffer[MAX_MESSAGE_BUFFER_SIZE];
+	ClientMsg buffer[MAX_MESSAGE_BUFFER_SIZE];
 	int read_pos, write_pos;
 }ClientMsgBuffer;
 
+typedef union{
+	TCHAR receiver[MAX_NAME_LENGHT]; // for the login instance
+	Top10 top10;
+}PonctualMsg;
+
 typedef struct {
-	ServerMessages serv_buffer[MAX_MESSAGE_BUFFER_SIZE];
+	int type;
+	PonctualMsg ponctualMsg;
+	int id_receiver;
+}ServerMsg;
+
+typedef struct {
+	ServerMsg buffer[MAX_MESSAGE_BUFFER_SIZE];
 	int read_pos, write_pos;
 }ServerMsgBuffer;
