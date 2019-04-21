@@ -18,6 +18,8 @@ SharedMemoryManager::~SharedMemoryManager()
 	UnmapViewOfFile(viewServerBuffer);
 	UnmapViewOfFile(viewGameData);
 
+	CloseHandle(hClientReadMutex);
+	CloseHandle(hClientWriteMutex);
 	CloseHandle(hClientBuffer);
 	CloseHandle(hServerBuffer);
 	CloseHandle(hGameData);
@@ -28,7 +30,7 @@ void SharedMemoryManager::initSharedMemory() {
 	size.QuadPart = sizeof(ServerMsgBuffer);
 
 	//Server Message Buffer
-	hServerBuffer = OpenFileMapping(PAGE_READWRITE, NULL,
+	hServerBuffer = OpenFileMapping(PAGE_READONLY, NULL,
 		SharedMemoryConstants::SHA_MEM_SERVER_BUFFER.c_str());
 
 	if (hServerBuffer == NULL)
@@ -37,7 +39,7 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create file mapping for server messageBuffer!");
 	}
 
-	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_WRITE,
+	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_READ,
 		0, 0, (SIZE_T)size.QuadPart);
 	if (viewServerBuffer == NULL)
 	{
@@ -51,7 +53,7 @@ void SharedMemoryManager::initSharedMemory() {
 	//Local Client Message Buffer
 	size.QuadPart = sizeof(ClientMsgBuffer);
 
-	hClientBuffer = OpenFileMapping(PAGE_READONLY,NULL,
+	hClientBuffer = OpenFileMapping(PAGE_READWRITE,NULL,
 		SharedMemoryConstants::SHA_MEM_CLIENT_BUFFER.c_str());
 
 	if (hClientBuffer == NULL)
@@ -60,7 +62,7 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create file mapping for client messageBuffer!");
 	}
 
-	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ,
+	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_WRITE,
 		0, 0, (SIZE_T)size.QuadPart);
 	if (viewClientBuffer == NULL)
 	{
@@ -116,7 +118,6 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to create ClientSemaphore empty");
 	}
 
-
 	hClientSemFilled = CreateSemaphore(NULL, 0, MAX_MESSAGE_BUFFER_SIZE,
 		SharedMemoryConstants::SEM_CLIENT_FILLED.c_str());
 	if (hClientSemFilled == NULL)
@@ -125,5 +126,23 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to create ClientSemaphore filled");
 	}
 
-	//TODO: initialize hUpdate
+	//TODO: open hUpdate
+	//hUpdateEvent = OpenEvent(EVENT_ALL_ACCESS,false,)
+	//if (hUpdateEvent == NULL)
+	//{
+	//	this->~SharedMemoryManager();
+	//	throw TEXT("Error while trying to open gamedata update event");
+	//}
+
+	hClientReadMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_READ.c_str());
+	if (hClientReadMutex == NULL) {
+		this->~SharedMemoryManager();
+		throw TEXT("Error while trying to create ClientReadMutex");
+	}
+
+	hClientWriteMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_WRITE.c_str());
+	if (hClientReadMutex == NULL) {
+		this->~SharedMemoryManager();
+		throw TEXT("Error while trying to create ClientWriteMutex");
+	}
 }
