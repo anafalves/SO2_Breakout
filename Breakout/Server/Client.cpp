@@ -1,10 +1,3 @@
 #include "Client.h"
 
-Client::Client()
-{
-}
-
-
-Client::~Client()
-{
-}
+int Client::idCounter = 1;

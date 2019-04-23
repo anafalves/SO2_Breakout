@@ -14,6 +14,8 @@ public:
 		//TODO: initialize values such as default sizes for field, e.g. width and height, etc
 	}
 
+	Player * getAvailablePlayer();
+
 	//Sets initial values and positions of things, such as ball, players, etc.
 	void setupGameStart();
 	void setupBall();
