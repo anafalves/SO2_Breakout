@@ -115,11 +115,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Client.cpp" />
     <ClCompile Include="CommandConstants.cpp" />
     <ClCompile Include="ConfigHandler.cpp" />
     <ClCompile Include="GameConfig.cpp" />
     <ClCompile Include="GameDataManager.cpp" />
+    <ClCompile Include="LocalClient.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="SharedMemoryConstants.cpp" />
@@ -136,12 +136,12 @@
     <ClInclude Include="GameConfig.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="GameDataManager.h" />
+    <ClInclude Include="LocalClient.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="SharedMemoryConstants.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="ServerComm.h" />
-    <ClInclude Include="ServerManager.h" />
     <ClInclude Include="SharedMemoryManager.h" />
     <ClInclude Include="Top10Manager.h" />
     <ClInclude Include="UnicodeConfigs.h" />

@@ -5,28 +5,43 @@
 #include <io.h>
 #include <iostream>
 #include <string>
+
 #include "UnicodeConfigs.h"
-
-using namespace std;
-
-enum ClientStatus {
-	LOBBY = 0,
-	IN_GAME
-};
+#include "GameData.h"
 
 class Client
 {
 private:
-	HANDLE hPipe;
-	HANDLE hThread;
-	//TODO: add pointer to their object in shared memory
-	int STATUS;
+	static int idCounter;
+	const int id;
+	Player * const player;
+
+	std::tstring name;
+	bool inGame;
 
 public:
-	Client();
-	~Client();
-	bool sendMessage();
-	//myMessagexpto receiveMessage();
+	Client(std::tstring pname, Player * p)
+		:name(pname), player(p), id(idCounter++)
+	{};
 
+	std::tstring getName() const {
+		return name;
+	}
+
+	bool isInGame() const {
+		return inGame;
+	}
+
+	void setInGame(bool status) {
+		inGame = status;
+	}
+
+	~Client() {
+		player->active = false;
+		player->id = -1;
+	};
+
+	virtual void sendMessage() = 0;
+	//virtual ClientMsg receiveMessage() = 0;
 };
 

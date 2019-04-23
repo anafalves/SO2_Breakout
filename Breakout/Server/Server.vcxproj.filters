@@ -42,9 +42,6 @@
     <ClCompile Include="Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Client.cpp">
-      <Filter>Source Files\Communication</Filter>
-    </ClCompile>
     <ClCompile Include="ServerComm.cpp">
       <Filter>Source Files\Communication</Filter>
     </ClCompile>
@@ -78,6 +75,9 @@
     <ClCompile Include="GameDataManager.cpp">
       <Filter>Source Files\Game\GameData</Filter>
     </ClCompile>
+    <ClCompile Include="LocalClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -90,9 +90,6 @@
       <Filter>Header Files\Communication</Filter>
     </ClInclude>
     <ClInclude Include="ServerComm.h">
-      <Filter>Header Files\Communication</Filter>
-    </ClInclude>
-    <ClInclude Include="ServerManager.h">
       <Filter>Header Files\Communication</Filter>
     </ClInclude>
     <ClInclude Include="GameData.h">
@@ -124,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="GameDataManager.h">
       <Filter>Header Files\Game\GameData</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalClient.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
