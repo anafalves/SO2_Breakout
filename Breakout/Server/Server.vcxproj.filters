@@ -78,6 +78,9 @@
     <ClCompile Include="LocalClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RemoteClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -123,6 +126,9 @@
       <Filter>Header Files\Game\GameData</Filter>
     </ClInclude>
     <ClInclude Include="LocalClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RemoteClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

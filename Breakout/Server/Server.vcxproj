@@ -121,6 +121,7 @@
     <ClCompile Include="GameDataManager.cpp" />
     <ClCompile Include="LocalClient.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RemoteClient.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="SharedMemoryConstants.cpp" />
     <ClCompile Include="Server.cpp" />
@@ -137,6 +138,7 @@
     <ClInclude Include="GameData.h" />
     <ClInclude Include="GameDataManager.h" />
     <ClInclude Include="LocalClient.h" />
+    <ClInclude Include="RemoteClient.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="SharedMemoryConstants.h" />
