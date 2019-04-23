@@ -37,16 +37,16 @@
     <Filter Include="Source Files\GameConfigs">
       <UniqueIdentifier>{f753a542-f26c-4bb9-9583-5f2038afa857}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Communication\ClientClasses">
+      <UniqueIdentifier>{c8fa73b5-5574-4e00-ad0a-85387470c89b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Communication\ClientClasses">
+      <UniqueIdentifier>{08857997-a923-48da-9563-ad1d8c5a3f30}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Server.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ServerComm.cpp">
-      <Filter>Source Files\Communication</Filter>
-    </ClCompile>
-    <ClCompile Include="ServerManager.cpp">
-      <Filter>Source Files\Communication</Filter>
     </ClCompile>
     <ClCompile Include="SharedMemoryManager.cpp">
       <Filter>Source Files\Game\GameData</Filter>
@@ -76,10 +76,16 @@
       <Filter>Source Files\Game\GameData</Filter>
     </ClCompile>
     <ClCompile Include="LocalClient.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Communication\ClientClasses</Filter>
     </ClCompile>
     <ClCompile Include="RemoteClient.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Communication\ClientClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientManager.cpp">
+      <Filter>Source Files\Communication\ClientClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
+      <Filter>Source Files\Communication\ClientClasses</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,12 +94,6 @@
     </ClInclude>
     <ClInclude Include="UnicodeConfigs.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Client.h">
-      <Filter>Header Files\Communication</Filter>
-    </ClInclude>
-    <ClInclude Include="ServerComm.h">
-      <Filter>Header Files\Communication</Filter>
     </ClInclude>
     <ClInclude Include="GameData.h">
       <Filter>Header Files\Game\GameData</Filter>
@@ -125,11 +125,17 @@
     <ClInclude Include="GameDataManager.h">
       <Filter>Header Files\Game\GameData</Filter>
     </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>Header Files\Communication\ClientClasses</Filter>
+    </ClInclude>
     <ClInclude Include="LocalClient.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Communication\ClientClasses</Filter>
     </ClInclude>
     <ClInclude Include="RemoteClient.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Communication\ClientClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientManager.h">
+      <Filter>Header Files\Communication\ClientClasses</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

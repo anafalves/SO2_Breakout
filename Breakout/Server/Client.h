@@ -22,7 +22,15 @@ private:
 public:
 	Client(std::tstring pname, Player * p)
 		:name(pname), player(p), id(idCounter++)
-	{};
+	{
+		p->active = true;
+		p->id = id;
+		_tcscpy_s(p->name, pname.c_str());
+	};
+
+	int getId() const {
+		return id;
+	}
 
 	std::tstring getName() const {
 		return name;
@@ -36,12 +44,15 @@ public:
 		inGame = status;
 	}
 
+	Player * getPlayer() {
+		return player;
+	}
+
+	//virtual void sendMessage() = 0;
+	//virtual ClientMsg receiveMessage() = 0;
+
 	~Client() {
 		player->active = false;
-		player->id = -1;
 	};
-
-	virtual void sendMessage() = 0;
-	//virtual ClientMsg receiveMessage() = 0;
 };
 

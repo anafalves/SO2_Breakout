@@ -4,13 +4,16 @@ class LocalClient : public Client
 {
 private:
 
-
 public:
-	LocalClient(std::tstring username)
-		:Client(username)
+	LocalClient(std::tstring username, Player * p)
+		:Client(username, p)
 	{
-
 	}
+
+	void sendMessage() {
+		//TODO: Send message
+	}
+
 	~LocalClient();
 };
 

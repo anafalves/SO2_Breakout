@@ -13,6 +13,7 @@
 #include "SharedMemoryManager.h"
 #include "GameConfig.h"
 #include "GameDataManager.h"
+#include "ClientManager.h"
 
 enum ErrorCodes{
 	CONFIG_LOADING_ERROR = 1,
@@ -45,6 +46,7 @@ public:
 
 	static GameConfig config;
 	static Top10Manager topPlayers;
+	static ClientManager clients;
 	static SharedMemoryManager sharedMemory;
 	static ThreadManager threadManager;
 	static GameDataManager gameData;

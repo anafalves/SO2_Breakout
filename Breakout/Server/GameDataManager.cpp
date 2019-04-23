@@ -97,3 +97,13 @@ void GameDataManager::moveActiveBalls() {
 		//TODO: if ball hits lower limit, ball is lost, and players lose one life.
 	}
 }
+
+Player * GameDataManager::getAvailablePlayer() {
+	for (auto &player : gameData->players) {
+		if (!player.active) {
+			return &player;
+		}
+	}
+
+	return nullptr;
+}
