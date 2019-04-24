@@ -16,7 +16,6 @@ enum ServerMessages {
 
 enum ClientMessages {
 	LOGIN = 0,
-	TOP10,
 	LEAVE,
 	MOVE,
 	//READY
@@ -49,6 +48,7 @@ typedef union {
 
 typedef struct{
 	int type;
+	int id_receiver;
 	BufferContent content;
 }ClientMsg;
 
@@ -64,8 +64,8 @@ typedef union{
 
 typedef struct {
 	int type;
-	PonctualMsg ponctualMsg;
 	int id_receiver;
+	PonctualMsg ponctualMsg;
 }ServerMsg;
 
 typedef struct {
