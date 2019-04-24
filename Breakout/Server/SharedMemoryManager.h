@@ -11,13 +11,6 @@ private:
 	HANDLE hServerBuffer;
 	HANDLE hClientBuffer;
 
-	HANDLE hUpdateEvent;
-	HANDLE hServerSemEmpty;
-	HANDLE hServerSemFilled;
-
-	HANDLE hClientSemEmpty;
-	HANDLE hClientSemFilled;
-
 	GameData * viewGameData;
 	ServerMsgBuffer * viewServerBuffer;
 	ClientMsgBuffer * viewClientBuffer;
@@ -26,11 +19,24 @@ private:
 
 public:
 
+	HANDLE hUpdateEvent;
+	HANDLE hServerSemEmpty;
+	HANDLE hServerSemFilled;
+	HANDLE hExitEvent;
+	HANDLE hClientSemEmpty;
+	HANDLE hClientSemFilled;
+
 	GameData * getGameData() const {
 		return viewGameData;
 	};
 
 	int initSharedMemory();
+
+	//TODO: Add read functions: ReadMsg, WriteMsg, setUpdate.
+	void setUpdate() {
+		SetEvent(hUpdateEvent);
+		ResetEvent(hUpdateEvent);
+	}
 
 	SharedMemoryManager();
 	~SharedMemoryManager();

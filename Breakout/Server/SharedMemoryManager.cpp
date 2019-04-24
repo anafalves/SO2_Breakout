@@ -137,5 +137,12 @@ int SharedMemoryManager::initSemaphores() {
 		return -1;
 	}
 
+	hExitEvent = CreateEvent(NULL, TRUE, FALSE, SharedMemoryConstants::EXIT_EVENT.c_str());
+	if (hExitEvent == NULL)
+	{
+		this->~SharedMemoryManager();
+		return -1;
+	}
+
 	return 0;
 }
