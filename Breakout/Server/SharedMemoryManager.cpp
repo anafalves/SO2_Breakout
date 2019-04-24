@@ -11,6 +11,7 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hClientSemEmpty);
 	CloseHandle(hClientSemFilled);
 	CloseHandle(hUpdateEvent);
+	CloseHandle(hExitEvent);
 
 	UnmapViewOfFile(viewClientBuffer);
 	UnmapViewOfFile(viewServerBuffer);
