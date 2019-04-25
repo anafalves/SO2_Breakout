@@ -8,7 +8,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 	int time = Server::config.getMovementSpeed() * 10;
 
 	Server::gameData.setupGameStart();
-	//TODO: sperar pelo semáforo / mutex de inicio do jogo para poder avançar
+	//TODO: sperar pelo semï¿½foro / mutex de inicio do jogo para poder avanï¿½ar
 
 	while (*CONTINUE)
 	{
@@ -32,12 +32,18 @@ void handleMessage(ClientMsg & message) {
 
 	case LOGIN:
 		reply.type = Server::clients.AddClient(message.message.name, reply.id);
+		if (reply.type == ACCEPT) {
+			Server::threadManager.startBallThread(); //TODO: Remove this later
+		}
 		_tcscpy_s(reply.message.receiver, message.message.name);
+
 		Server::sharedMemory.writeMessage(reply);
-		Server::threadManager.startBallThread(); //TODO: Remove this later
+		tcout << "Client: " << message.message.name << " -> " << reply.type << endl;
+		break;
 
 	case LEAVE:
 		Server::clients.removeClient(message.id);
+		break;
 	}
 }
 

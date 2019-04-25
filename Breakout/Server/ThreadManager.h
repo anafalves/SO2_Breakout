@@ -43,6 +43,10 @@ public:
 		CloseHandle(hBallThread);
 	}
 
+	void waitForLocalClientThread() {
+		WaitForSingleObject(hLocalClientHandler, INFINITE);
+	}
+
 	void waitForBallThread() {
 		WaitForSingleObject(hBallThread, INFINITE);
 	}

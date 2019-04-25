@@ -58,7 +58,7 @@ int SharedMemoryManager::initSharedMemory() {
 		return -1;
 	}
 
-	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer,FILE_MAP_WRITE,
+	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
 						0, 0, (SIZE_T)size.QuadPart);
 	if (viewClientBuffer == NULL)
 	{
@@ -159,7 +159,7 @@ void SharedMemoryManager::writeMessage(ServerMsg message) {
 	WaitForMultipleObjects(2, writeMessage, FALSE, INFINITE);
 
 	//Write message and update write counter
-	message = viewServerBuffer->buffer[viewServerBuffer->write_pos];
+	viewServerBuffer->buffer[viewServerBuffer->write_pos++] = message;
 	viewServerBuffer->write_pos = viewServerBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
 
 	//Release 1 filled position for the local clients to read
