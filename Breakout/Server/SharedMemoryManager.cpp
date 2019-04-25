@@ -1,4 +1,5 @@
 #include "SharedMemoryManager.h"
+#include "Server.h"
 
 SharedMemoryManager::SharedMemoryManager()
 {
@@ -146,4 +147,41 @@ int SharedMemoryManager::initSemaphores() {
 	}
 
 	return 0;
+}
+
+void SharedMemoryManager::writeMessage(ServerMsg message) {
+	HANDLE writeMessage[2];
+
+	writeMessage[0] = hClientSemEmpty;
+	writeMessage[1] = hExitEvent;
+
+	//Wait for empty slot to place message
+	WaitForMultipleObjects(2, writeMessage, FALSE, INFINITE);
+
+	//Write message and update write counter
+	message = viewServerBuffer->buffer[viewServerBuffer->write_pos];
+	viewServerBuffer->write_pos = viewServerBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
+
+	//Release 1 filled position for the local clients to read
+	ReleaseSemaphore(hClientSemFilled, 1, NULL);
+}
+
+ClientMsg SharedMemoryManager::readMessage() {
+	ClientMsg message;
+	HANDLE clientMessages[2];
+
+	clientMessages[0] = hClientSemFilled;
+	clientMessages[1] = hExitEvent;
+
+	//Wait for a message to be available
+	WaitForMultipleObjects(2, clientMessages, FALSE, INFINITE);
+
+	//Read buffer and update read_pos, which is our index
+	message = viewClientBuffer->buffer[viewClientBuffer->read_pos];
+	viewClientBuffer->read_pos = viewClientBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+	
+	//Releases 1 empty position to write on the client buffer
+	ReleaseSemaphore(hClientSemEmpty, 1, NULL);
+
+	return message;
 }
