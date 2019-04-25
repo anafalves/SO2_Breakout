@@ -4,7 +4,7 @@ class RemoteClient :
 	public Client
 {
 public:
-	RemoteClient();
-	~RemoteClient();
+
+
 };
 

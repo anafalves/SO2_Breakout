@@ -1,32 +1,45 @@
 #include "LocalCLient.h"
 
-bool LocalCLient::login(TCHAR name[MAX_NAME_LENGHT])
+bool LocalCLient::login(TCHAR * name)
 {
-	ClientMsg msg = { LOGIN,*name };
-	ServerMsg answer;
+	ClientMsg msg;
+	ServerResult answer;
+
+	msg.type = LOGIN;
+	_tcscpy_s(msg.message.name, name);
 
 	sendMessage(msg);
 
 	answer = receiveLoginAnswer(name);
-	if (answer.type == ACCEPT) {
-		setClientID(answer.id_receiver);
+	if (answer.msg.type == ACCEPT) {
+		setClientID(answer.msg.id);
 		return true;
-	}//TODO: return aproprietly the server answer
+	}//TODO: return the server answer aproprietly, no server, server full, change name
 	return false;
 }
 
+GameData LocalCLient::receiveBroadcast() {
+	HANDLE update[2];
+	update[0] = sharedMemmoryContent.hUpdateEvent;
+	update[1] = sharedMemmoryContent.hExitEvent;
+
+	WaitForMultipleObjects(2, update, false, INFINITE);
+	return (*sharedMemmoryContent.viewGameData);
+}
 
 void LocalCLient::sendMessage(ClientMsg msg)
 {
-	WaitForSingleObject(sharedMemmoryContent.hServerSemEmpty, INFINITE);
+	long n = 0;
+	WaitForSingleObject(sharedMemmoryContent.hClientSemEmpty, INFINITE);
 	WaitForSingleObject(sharedMemmoryContent.hClientWriteMutex, INFINITE);
 
 	sharedMemmoryContent.viewClientBuffer->buffer[sharedMemmoryContent.viewClientBuffer->write_pos] = msg;
 	sharedMemmoryContent.viewClientBuffer->write_pos++;
 	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
 
-	ReleaseSemaphore(sharedMemmoryContent.hServerSemFilled, 1, NULL);
+	ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, &n);
 	ReleaseMutex(sharedMemmoryContent.hClientWriteMutex);
+	tcout << "N: " << n; //TODO: Remove
 }
 
 ServerMsg LocalCLient::receiveMessage() {
@@ -35,7 +48,7 @@ ServerMsg LocalCLient::receiveMessage() {
 	WaitForSingleObject(sharedMemmoryContent.hServerSemFilled, INFINITE);
 	WaitForSingleObject(sharedMemmoryContent.hClientReadMutex,INFINITE);
 
-	if (sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos].id_receiver == getClientID())
+	if (sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos].id == getClientID())
 	{
 		msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
 		sharedMemmoryContent.viewServerBuffer->read_pos++;
@@ -44,7 +57,7 @@ ServerMsg LocalCLient::receiveMessage() {
 		ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
 	}
 	else {
-		ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+		ReleaseSemaphore(sharedMemmoryContent.hServerSemFilled, 1, NULL);
 		msg.type = INVALID;
 	}
 	ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
@@ -72,7 +85,8 @@ ServerResult LocalCLient::receiveLoginAnswer(tstring name)
 		if (dWaitResult == WAIT_TIMEOUT) {
 			return resultFeedBack(result, TEXT("Reading mutex wait timed out"));
 		}
-		if (sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos].ponctualMsg.receiver == name)
+
+		if (sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos].message.receiver == name)
 		{
 			result.msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
 			sharedMemmoryContent.viewServerBuffer->read_pos++;
@@ -86,20 +100,23 @@ ServerResult LocalCLient::receiveLoginAnswer(tstring name)
 			if (!ReleaseMutex(sharedMemmoryContent.hClientReadMutex)) {
 				result.errorMsg = TEXT("Release Reading Mutex error."); //TODO: check if its more appropriate change msg flag to invalid
 				return result;
-
-				return result;
 			}
 
 			if (!ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL))
 			{
 				return resultFeedBack(result, TEXT("Release Filled Server Semaphore error."));
 			}
+
 			if (!ReleaseMutex(sharedMemmoryContent.hClientReadMutex)) {
 				return resultFeedBack(result, TEXT("Release Reading Mutex error."));
 			}
 		}
+	}
+	return result;
 }
 
-
+LocalCLient * getClientInstance() {
+	return new LocalCLient();
+}
 
 

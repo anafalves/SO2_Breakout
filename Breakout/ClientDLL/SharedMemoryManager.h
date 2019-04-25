@@ -20,6 +20,7 @@ public:
 	ServerMsgBuffer * viewServerBuffer;
 
 	HANDLE hUpdateEvent;
+	HANDLE hExitEvent;
 	HANDLE hServerSemEmpty;
 	HANDLE hServerSemFilled;
 
