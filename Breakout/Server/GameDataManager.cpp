@@ -3,8 +3,8 @@
 enum ScreenDimensions {
 	MIN_HEIGHT = 0,
 	MIN_WIDTH = 0,
-	MAX_HEIGHT = 1080,
-	MAX_WIDTH = 1920
+	MAX_HEIGHT = 400,
+	MAX_WIDTH = 800
 };
 
 void GameDataManager::setupGameStart()
@@ -64,6 +64,7 @@ void GameDataManager::setupBall() {
 }
 
 void GameDataManager::moveActiveBalls() {
+	//TODO: Mutex here 
 	for (auto &ball : gameData->balls) {
 
 		if (!ball.active) {

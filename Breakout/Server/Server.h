@@ -20,7 +20,7 @@ enum ErrorCodes{
 	SERVER_ALREADY_RUNNING,
 	TOP10_LOADING_ERROR,
 	SHARED_MEMORY_ERROR,
-
+	LOCAL_CLIENT_HANDLER_ERROR,
 
 	
 };
@@ -70,6 +70,10 @@ public:
 		}
 
 		gameData = GameDataManager(sharedMemory.getGameData());
+
+		if (threadManager.startLocalClientHandler()) {
+			return LOCAL_CLIENT_HANDLER_ERROR;
+		}
 
 		//TODO:Launch server threads, comm threads and others.
 		
