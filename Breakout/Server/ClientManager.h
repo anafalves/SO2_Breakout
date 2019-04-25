@@ -12,10 +12,12 @@ private:
 	std::vector<Client *> clients;
 
 public:
-	int AddClient(std::tstring name);
+	int AddClient(std::tstring name, int & myId);
 	int AddClient(std::tstring name, HANDLE pipe, HANDLE thread);
 	bool removeClient(std::tstring name);
 	bool removeClient(int id);
+
+	//TODO: add broadcast method here
 
 	~ClientManager();
 };
