@@ -71,7 +71,7 @@ public:
 
 		gameData = GameDataManager(sharedMemory.getGameData());
 
-		if (threadManager.startLocalClientHandler()) {
+		if (!threadManager.startLocalClientHandler()) {
 			return LOCAL_CLIENT_HANDLER_ERROR;
 		}
 
@@ -80,12 +80,13 @@ public:
 		//TODO: Create a game thread, that will handle the game and start the ball as the players loose it and what not
 		//TODO: Call Connection Handler to startup connection threads and services
 
-		//waitForThreads();
+		waitForThreads();
 		return 0;
 	}
 
 	static void waitForThreads() {
 		threadManager.waitForBallThread();
+		threadManager.waitForLocalClientThread();
 	}
 
 	static void showConfigs() {
