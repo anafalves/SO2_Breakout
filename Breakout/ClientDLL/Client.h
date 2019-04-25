@@ -1,5 +1,5 @@
 #pragma once
-#include<string>
+#include <tchar.h>
 #include "../Server/UnicodeConfigs.h"
 
 class Client
@@ -9,12 +9,13 @@ private:
 public:
 	bool CONTINUE;
 
-	Client();
-	virtual ~Client() = 0;
+	Client() {
+		CONTINUE = true;
+	}
 	int getClientID() { return client_id; }
 	void setClientID(int id) { client_id = id; }
 
-	virtual bool login(std::tstring name) = 0;
+	virtual bool login(TCHAR * name) = 0;
 	//virtual receiveBroadcast() = 0;
 	//virtual sendMessage() = 0;
 	//virtual receiveMessage() = 0;

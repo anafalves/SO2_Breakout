@@ -10,6 +10,7 @@ const tstring SharedMemoryConstants::SHA_MEM_SERVER_BUFFER = TEXT("SharedMemoryS
 const tstring SharedMemoryConstants::SEM_SERVER_EMPTY = TEXT("SemServerEmpty");
 const tstring SharedMemoryConstants::SEM_SERVER_FILLED = TEXT("SemServerFilled");
 const tstring SharedMemoryConstants::EVENT_GAMEDATA_UPDATE = TEXT("EventGamedataUpdate");
+const tstring SharedMemoryConstants::EXIT_EVENT = TEXT("ExitEvent");
 
 const tstring SharedMemoryConstants::MUT_CLI_READ = TEXT("MutClientRead");
 const tstring SharedMemoryConstants::MUT_CLI_WRITE = TEXT("MutClientWrite");

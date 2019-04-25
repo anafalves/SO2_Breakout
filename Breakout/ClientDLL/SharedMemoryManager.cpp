@@ -30,7 +30,7 @@ void SharedMemoryManager::initSharedMemory() {
 	size.QuadPart = sizeof(ServerMsgBuffer);
 
 	//Server Message Buffer
-	hServerBuffer = OpenFileMapping(PAGE_READONLY, NULL,
+	hServerBuffer = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, NULL,
 		SharedMemoryConstants::SHA_MEM_SERVER_BUFFER.c_str());
 
 	if (hServerBuffer == NULL)
@@ -39,21 +39,19 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create file mapping for server messageBuffer!");
 	}
 
-	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_READ,
+	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
 		0, 0, (SIZE_T)size.QuadPart);
 	if (viewServerBuffer == NULL)
 	{
+		tcout << "couldn't create map view of file for server messageBuffer!";
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create map view of file for server messageBuffer!");
+		throw 10;//TEXT("couldn't create map view of file for server messageBuffer!");
 	}
-
-	viewServerBuffer->read_pos = viewServerBuffer->write_pos = 0;
-
 
 	//Local Client Message Buffer
 	size.QuadPart = sizeof(ClientMsgBuffer);
 
-	hClientBuffer = OpenFileMapping(PAGE_READWRITE,NULL,
+	hClientBuffer = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE,NULL,
 		SharedMemoryConstants::SHA_MEM_CLIENT_BUFFER.c_str());
 
 	if (hClientBuffer == NULL)
@@ -62,7 +60,7 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create file mapping for client messageBuffer!");
 	}
 
-	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_WRITE,
+	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
 		0, 0, (SIZE_T)size.QuadPart);
 	if (viewClientBuffer == NULL)
 	{
@@ -70,12 +68,10 @@ void SharedMemoryManager::initSharedMemory() {
 		throw TEXT("couldn't create map view of file for client messageBuffer!");
 	}
 
-	viewClientBuffer->read_pos = viewClientBuffer->write_pos = 0;
-
 
 	//GameData Shared memory
 	size.QuadPart = sizeof(GameData);
-	hGameData = OpenFileMapping(PAGE_READONLY, NULL,
+	hGameData = OpenFileMapping(FILE_MAP_READ, NULL,
 		SharedMemoryConstants::SHA_MEM_GAMEDATA.c_str());
 
 	if (hGameData == NULL)
@@ -94,7 +90,7 @@ void SharedMemoryManager::initSharedMemory() {
 }
 
 void SharedMemoryManager::initSyncVariables() {
-	hServerSemEmpty = CreateSemaphore(NULL, MAX_MESSAGE_BUFFER_SIZE, MAX_MESSAGE_BUFFER_SIZE,
+	hServerSemEmpty = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
 		SharedMemoryConstants::SEM_SERVER_EMPTY.c_str());
 	if (hServerSemEmpty == NULL)
 	{
@@ -102,7 +98,7 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to create ServerSemaphore empty");
 	}
 
-	hServerSemFilled = CreateSemaphore(NULL, 0, MAX_MESSAGE_BUFFER_SIZE,
+	hServerSemFilled = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
 		SharedMemoryConstants::SEM_SERVER_FILLED.c_str());
 	if (hServerSemFilled == NULL)
 	{
@@ -110,7 +106,7 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to create ServerSemaphore filled");
 	}
 
-	hClientSemEmpty = CreateSemaphore(NULL, MAX_MESSAGE_BUFFER_SIZE, MAX_MESSAGE_BUFFER_SIZE,
+	hClientSemEmpty = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
 		SharedMemoryConstants::SEM_CLIENT_EMPTY.c_str());
 	if (hClientSemEmpty == NULL)
 	{
@@ -118,21 +114,27 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to create ClientSemaphore empty");
 	}
 
-	hClientSemFilled = CreateSemaphore(NULL, 0, MAX_MESSAGE_BUFFER_SIZE,
+	hClientSemFilled = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
 		SharedMemoryConstants::SEM_CLIENT_FILLED.c_str());
 	if (hClientSemFilled == NULL)
 	{
 		this->~SharedMemoryManager();
 		throw TEXT("Error while trying to create ClientSemaphore filled");
 	}
+	
+	hUpdateEvent = OpenEvent(EVENT_ALL_ACCESS, false, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
+	if (hUpdateEvent == NULL)
+	{
+		this->~SharedMemoryManager();
+		throw TEXT("Error while trying to open gamedata update event");
+	}
 
-	//TODO: open hUpdate
-	//hUpdateEvent = OpenEvent(EVENT_ALL_ACCESS,false,)
-	//if (hUpdateEvent == NULL)
-	//{
-	//	this->~SharedMemoryManager();
-	//	throw TEXT("Error while trying to open gamedata update event");
-	//}
+	hExitEvent = OpenEvent(EVENT_ALL_ACCESS, false, SharedMemoryConstants::EXIT_EVENT.c_str());
+	if (hExitEvent == NULL)
+	{
+		this->~SharedMemoryManager();
+		throw TEXT("Error while trying to open gamedata update event");
+	}
 
 	hClientReadMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_READ.c_str());
 	if (hClientReadMutex == NULL) {

@@ -1,4 +1,5 @@
 #include "SharedMemoryManager.h"
+#include "Server.h"
 
 SharedMemoryManager::SharedMemoryManager()
 {
@@ -11,6 +12,7 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hClientSemEmpty);
 	CloseHandle(hClientSemFilled);
 	CloseHandle(hUpdateEvent);
+	CloseHandle(hExitEvent);
 
 	UnmapViewOfFile(viewClientBuffer);
 	UnmapViewOfFile(viewServerBuffer);
@@ -56,7 +58,7 @@ int SharedMemoryManager::initSharedMemory() {
 		return -1;
 	}
 
-	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer,FILE_MAP_WRITE,
+	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
 						0, 0, (SIZE_T)size.QuadPart);
 	if (viewClientBuffer == NULL)
 	{
@@ -137,5 +139,49 @@ int SharedMemoryManager::initSemaphores() {
 		return -1;
 	}
 
+	hExitEvent = CreateEvent(NULL, TRUE, FALSE, SharedMemoryConstants::EXIT_EVENT.c_str());
+	if (hExitEvent == NULL)
+	{
+		this->~SharedMemoryManager();
+		return -1;
+	}
+
 	return 0;
+}
+
+void SharedMemoryManager::writeMessage(ServerMsg message) {
+	HANDLE writeMessage[2];
+
+	writeMessage[0] = hClientSemEmpty;
+	writeMessage[1] = hExitEvent;
+
+	//Wait for empty slot to place message
+	WaitForMultipleObjects(2, writeMessage, FALSE, INFINITE);
+
+	//Write message and update write counter
+	viewServerBuffer->buffer[viewServerBuffer->write_pos++] = message;
+	viewServerBuffer->write_pos = viewServerBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
+
+	//Release 1 filled position for the local clients to read
+	ReleaseSemaphore(hServerSemFilled, 1, NULL);
+}
+
+ClientMsg SharedMemoryManager::readMessage() {
+	ClientMsg message;
+	HANDLE clientMessages[2];
+
+	clientMessages[0] = hClientSemFilled;
+	clientMessages[1] = hExitEvent;
+
+	//Wait for a message to be available
+	WaitForMultipleObjects(2, clientMessages, FALSE, INFINITE);
+
+	//Read buffer and update read_pos, which is our index
+	message = viewClientBuffer->buffer[viewClientBuffer->read_pos++];
+	viewClientBuffer->read_pos = viewClientBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+	
+	//Releases 1 empty position to write on the client buffer
+	ReleaseSemaphore(hClientSemEmpty, 1, NULL);
+
+	return message;
 }

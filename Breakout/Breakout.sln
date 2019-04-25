@@ -8,6 +8,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClientDLL", "ClientDLL\ClientDLL.vcxproj", "{4FF49502-AB76-4434-A96A-F70569ADD48B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{09723734-0A7D-4FFB-813B-FEC3F687408C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4FF49502-AB76-4434-A96A-F70569ADD48B} = {4FF49502-AB76-4434-A96A-F70569ADD48B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

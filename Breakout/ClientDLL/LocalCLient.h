@@ -3,6 +3,12 @@
 #include "SharedMemoryManager.h"
 #include "../Server/Messages.h"
 
+#ifdef CLIENTDLL_EXPORTS
+#define CLIENT_API __declspec(dllexport)
+#else
+#define CLIENT_API __declspec(dllimport)
+#endif
+
 typedef struct {
 	ServerMsg msg;
 	tstring errorMsg;
@@ -15,12 +21,16 @@ private:
 	SharedMemoryManager sharedMemmoryContent;
 
 public:
-	LocalCLient() {};
+	LocalCLient()
+		:Client()
+	{};
 
-	bool login(TCHAR name[MAX_NAME_LENGHT]);
-	//receiveBroadcast() = 0;
+	CLIENT_API bool login(TCHAR * name);
+	CLIENT_API GameData receiveBroadcast();
 	void sendMessage(ClientMsg msg);
 	ServerMsg receiveMessage();
 	ServerResult receiveLoginAnswer(tstring name);
 
 };
+
+CLIENT_API LocalCLient * getClientInstance();

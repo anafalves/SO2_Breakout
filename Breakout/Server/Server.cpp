@@ -5,3 +5,4 @@ Top10Manager Server::topPlayers;
 SharedMemoryManager Server::sharedMemory;
 GameDataManager Server::gameData(nullptr);
 ThreadManager Server::threadManager;
+ClientManager Server::clients;

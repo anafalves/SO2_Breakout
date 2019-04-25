@@ -1,7 +1,7 @@
 #include "ClientManager.h"
 #include "Server.h"
 
-int ClientManager::AddClient(std::tstring name) {
+int ClientManager::AddClient(std::tstring name, int &myId) {
 	if (clients.size() >= (unsigned int)Server::config.getMaxPlayerCount()) {
 		return DENY_SERVER_FULL;
 	}
@@ -17,7 +17,10 @@ int ClientManager::AddClient(std::tstring name) {
 		return -1;
 	}
 
-	clients.push_back(new LocalClient(name, p));
+	LocalClient * temp = new LocalClient(name, p);
+	myId = temp->getId();
+
+	clients.push_back(temp);
 
 	return ACCEPT;
 }

@@ -144,7 +144,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Server\SharedMemoryConstants.cpp" />
-    <ClCompile Include="Client.cpp" />
     <ClCompile Include="LocalCLient.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="RemoteClient.cpp" />

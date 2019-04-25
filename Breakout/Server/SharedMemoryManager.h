@@ -11,7 +11,6 @@ private:
 	HANDLE hServerBuffer;
 	HANDLE hClientBuffer;
 
-	HANDLE hUpdateEvent;
 	HANDLE hServerSemEmpty;
 	HANDLE hServerSemFilled;
 
@@ -25,12 +24,21 @@ private:
 	int initSemaphores();
 
 public:
+	HANDLE hUpdateEvent;
+	HANDLE hExitEvent;
+
+	int initSharedMemory();
+	ClientMsg readMessage();
+	void writeMessage(ServerMsg message);
+
+	void setUpdate() {
+		SetEvent(hUpdateEvent);
+		ResetEvent(hUpdateEvent);
+	}
 
 	GameData * getGameData() const {
 		return viewGameData;
 	};
-
-	int initSharedMemory();
 
 	SharedMemoryManager();
 	~SharedMemoryManager();
