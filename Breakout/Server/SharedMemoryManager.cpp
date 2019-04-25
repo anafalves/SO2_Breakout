@@ -163,7 +163,7 @@ void SharedMemoryManager::writeMessage(ServerMsg message) {
 	viewServerBuffer->write_pos = viewServerBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
 
 	//Release 1 filled position for the local clients to read
-	ReleaseSemaphore(hClientSemFilled, 1, NULL);
+	ReleaseSemaphore(hServerSemFilled, 1, NULL);
 }
 
 ClientMsg SharedMemoryManager::readMessage() {
@@ -177,7 +177,7 @@ ClientMsg SharedMemoryManager::readMessage() {
 	WaitForMultipleObjects(2, clientMessages, FALSE, INFINITE);
 
 	//Read buffer and update read_pos, which is our index
-	message = viewClientBuffer->buffer[viewClientBuffer->read_pos];
+	message = viewClientBuffer->buffer[viewClientBuffer->read_pos++];
 	viewClientBuffer->read_pos = viewClientBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
 	
 	//Releases 1 empty position to write on the client buffer
