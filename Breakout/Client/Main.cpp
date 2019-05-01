@@ -20,16 +20,22 @@ DWORD WINAPI receiveBallUpdates() {
 }
 
 int _tmain(int argc, TCHAR ** argv) {
+	
+
+	if (argc != 2) {
+		return -1;
+	}
+
 	CONTINUE = true;
 	client = getClientInstance();
 
-	if (client->login((TCHAR *)TEXT("Woot"))) {
+	if (client->login(argv[1])) {
 		tcout << "login accepted" << endl;
 		
 		thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) receiveBallUpdates, NULL, 0, NULL);
 	}
 
-	_gettch();
+	_gettchar();
 	CONTINUE = false;
 
 	WaitForSingleObject(thread, INFINITE);

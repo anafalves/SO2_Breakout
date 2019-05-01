@@ -34,7 +34,7 @@ void LocalCLient::sendMessage(ClientMsg msg)
 	WaitForSingleObject(sharedMemmoryContent.hClientWriteMutex, INFINITE);
 
 	sharedMemmoryContent.viewClientBuffer->buffer[sharedMemmoryContent.viewClientBuffer->write_pos] = msg;
-	sharedMemmoryContent.viewClientBuffer->write_pos++;
+	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos + 1;
 	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
 
 	ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, &n);
@@ -102,7 +102,11 @@ ServerResult LocalCLient::receiveLoginAnswer(tstring name)
 				return result;
 			}
 
-			if (!ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL))
+			return result;
+		}
+		else 
+		{
+			if (!ReleaseSemaphore(sharedMemmoryContent.hServerSemFilled, 1, NULL))
 			{
 				return resultFeedBack(result, TEXT("Release Filled Server Semaphore error."));
 			}
@@ -112,7 +116,6 @@ ServerResult LocalCLient::receiveLoginAnswer(tstring name)
 			}
 		}
 	}
-	return result;
 }
 
 LocalCLient * getClientInstance() {

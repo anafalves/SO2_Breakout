@@ -152,14 +152,15 @@ int SharedMemoryManager::initSemaphores() {
 void SharedMemoryManager::writeMessage(ServerMsg message) {
 	HANDLE writeMessage[2];
 
-	writeMessage[0] = hClientSemEmpty;
+	writeMessage[0] = hServerSemEmpty;
 	writeMessage[1] = hExitEvent;
 
 	//Wait for empty slot to place message
 	WaitForMultipleObjects(2, writeMessage, FALSE, INFINITE);
 
 	//Write message and update write counter
-	viewServerBuffer->buffer[viewServerBuffer->write_pos++] = message;
+	viewServerBuffer->buffer[viewServerBuffer->write_pos] = message;
+	viewServerBuffer->write_pos = viewServerBuffer->write_pos + 1;
 	viewServerBuffer->write_pos = viewServerBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
 
 	//Release 1 filled position for the local clients to read
@@ -177,7 +178,8 @@ ClientMsg SharedMemoryManager::readMessage() {
 	WaitForMultipleObjects(2, clientMessages, FALSE, INFINITE);
 
 	//Read buffer and update read_pos, which is our index
-	message = viewClientBuffer->buffer[viewClientBuffer->read_pos++];
+	message = viewClientBuffer->buffer[viewClientBuffer->read_pos];
+	viewClientBuffer->read_pos = viewClientBuffer->read_pos + 1;
 	viewClientBuffer->read_pos = viewClientBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
 	
 	//Releases 1 empty position to write on the client buffer
