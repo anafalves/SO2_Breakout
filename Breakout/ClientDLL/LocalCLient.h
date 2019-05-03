@@ -29,7 +29,7 @@ public:
 	CLIENT_API GameData receiveBroadcast();
 	void sendMessage(ClientMsg msg);
 	ServerMsg receiveMessage();
-	ServerResult receiveLoginAnswer(tstring name);
+	ServerMsg receiveMessageWithTimeout();
 
 };
 

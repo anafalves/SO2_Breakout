@@ -18,7 +18,6 @@ SharedMemoryManager::~SharedMemoryManager()
 	UnmapViewOfFile(viewServerBuffer);
 	UnmapViewOfFile(viewGameData);
 
-	CloseHandle(hClientReadMutex);
 	CloseHandle(hClientWriteMutex);
 	CloseHandle(hClientBuffer);
 	CloseHandle(hServerBuffer);
@@ -136,14 +135,8 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to open gamedata update event");
 	}
 
-	hClientReadMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_READ.c_str());
-	if (hClientReadMutex == NULL) {
-		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientReadMutex");
-	}
-
 	hClientWriteMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_WRITE.c_str());
-	if (hClientReadMutex == NULL) {
+	if (hClientWriteMutex == NULL) {
 		this->~SharedMemoryManager();
 		throw TEXT("Error while trying to create ClientWriteMutex");
 	}
