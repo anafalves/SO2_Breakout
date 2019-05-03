@@ -7,6 +7,7 @@
 #include <string>
 
 #include "UnicodeConfigs.h"
+#include "Messages.h"
 #include "GameData.h"
 
 class Client
@@ -48,8 +49,7 @@ public:
 		return player;
 	}
 
-	//virtual void sendMessage() = 0;
-	//virtual ClientMsg receiveMessage() = 0;
+	virtual void sendUpdate() {};
 
 	~Client() {
 		player->active = false;
