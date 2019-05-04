@@ -87,6 +87,9 @@
     <ClCompile Include="Client.cpp">
       <Filter>Source Files\Communication\ClientClasses</Filter>
     </ClCompile>
+    <ClCompile Include="ServerInterface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -136,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="ClientManager.h">
       <Filter>Header Files\Communication\ClientClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerInterface.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
