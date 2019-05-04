@@ -75,8 +75,4 @@ ServerMsg LocalCLient::receiveMessageWithTimeout()
 	return result;
 }
 
-LocalCLient * getClientInstance() {
-	return new LocalCLient();
-}
-
 

@@ -1,6 +1,10 @@
 #pragma once
 #include <tchar.h>
+#include <Windows.h>
 #include "../Server/UnicodeConfigs.h"
+#include "../Server/GameData.h"
+#include "../Server/Messages.h"
+#include "../Server/SharedMemoryConstants.h"
 
 class Client
 {
@@ -17,9 +21,8 @@ public:
 	void setClientID(int id) { client_id = id; }
 
 	virtual bool login(TCHAR * name) = 0;
-	//virtual receiveBroadcast() = 0;
-	//virtual sendMessage() = 0;
-	//virtual receiveMessage() = 0;
+	virtual GameData receiveBroadcast() = 0;
+	virtual void sendMessage(ClientMsg message) = 0;
+	virtual ServerMsg receiveMessage() = 0;
+	virtual ServerMsg receiveMessageWithTimeout() = 0;
 };
-
-
