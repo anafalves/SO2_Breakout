@@ -16,7 +16,8 @@
 #include "ClientManager.h"
 
 enum ErrorCodes{
-	CONFIG_LOADING_ERROR = 1,
+	SERVER_STARTED = 0,
+	CONFIG_LOADING_ERROR,
 	SERVER_ALREADY_RUNNING,
 	TOP10_LOADING_ERROR,
 	SHARED_MEMORY_ERROR,
@@ -80,9 +81,10 @@ public:
 		//TODO: Create a game thread, that will handle the game and start the ball as the players loose it and what not
 		//TODO: Call Connection Handler to startup connection threads and services
 
-		waitForThreads();
-		return 0;
+		return SERVER_STARTED;
 	}
+
+
 
 	static void waitForThreads() {
 		threadManager.waitForBallThread();
