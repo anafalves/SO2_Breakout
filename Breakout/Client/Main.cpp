@@ -1,10 +1,10 @@
 #include <Windows.h>
 #include <tchar.h>
 #include "..\Server\UnicodeConfigs.h"
-#include "..\ClientDLL\LocalCLient.h"
+#include "..\ClientDLL\Communication.h"
 #include "..\Server\Messages.h"
 
-LocalCLient * client;
+Client * client;
 HANDLE thread = INVALID_HANDLE_VALUE;
 bool CONTINUE;
 
@@ -30,7 +30,11 @@ int _tmain(int argc, TCHAR ** argv) {
 	client = getClientInstance();
 	
 	alreadyRunning = CreateEvent(NULL,TRUE,FALSE, TEXT("LocalClientRunning"));
-	if (alreadyRunning != INVALID_HANDLE_VALUE && GetLastError() == ERROR_ALREADY_EXISTS) {
+	if (alreadyRunning == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+
+	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		tcout << "A local client is already running, you will join as espectator!" << endl;
 		thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)receiveBallUpdates, NULL, 0, NULL);
 	}
@@ -48,6 +52,7 @@ int _tmain(int argc, TCHAR ** argv) {
 	CONTINUE = false;
 
 	WaitForSingleObject(thread, INFINITE);
+	CloseHandle(alreadyRunning);
 
 	return 0;
 }
