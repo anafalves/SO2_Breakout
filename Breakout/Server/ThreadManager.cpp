@@ -38,6 +38,7 @@ void handleMessage(ClientMsg & message) {
 		_tcscpy_s(reply.message.receiver, message.message.name);
 
 		Server::sharedMemory.writeMessage(reply);
+		//TODO: do something about this later!
 		tcout << "Client: " << message.message.name << " -> " << reply.type << endl;
 		break;
 

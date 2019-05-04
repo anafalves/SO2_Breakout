@@ -5,7 +5,7 @@
 #include "Top10Manager.h"
 
 enum ServerMessages {
-	INVALID = 0, //the msg is for other person
+	TIMEDOUT,
 	ACCEPT,
 	DENY_USERNAME,
 	DENY_SERVER_FULL,
@@ -29,22 +29,8 @@ enum CLientMoves {
 
 enum MessageConstants {
 	MAX_NAME_LENGHT = 50,
-	MAX_MESSAGE_BUFFER_SIZE = 20
+	MAX_MESSAGE_BUFFER_SIZE = 16
 };
-
-//Pipe Messages Server -> Client
-typedef union {
-	TCHAR name[MAX_NAME_LENGHT];
-	Top10 top10;
-	GameData gameData;
-}Message;
-
-typedef struct {
-	int type;
-	int id;
-	Message message;
-}Carrier;
-//End
 
 //Pipe and Local Client -> Server messages
 typedef struct {
@@ -69,6 +55,7 @@ typedef struct{
 typedef union{
 	TCHAR receiver[MAX_NAME_LENGHT]; // for the login instance
 	Top10 top10;
+	GameData gameData; //TODO: This may be divided by parts, so only the necessary parts are sent to the client, if it is too slow.
 }ServerResponse;
 
 typedef struct {

@@ -27,7 +27,7 @@
     <ClCompile Include="LocalCLient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RemoteClient.cpp">
+    <ClCompile Include="Communication.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -51,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Server\Messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Communication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

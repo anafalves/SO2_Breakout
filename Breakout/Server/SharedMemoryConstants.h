@@ -19,7 +19,6 @@ struct SharedMemoryConstants
 	static const tstring EVENT_GAMEDATA_UPDATE;
 	static const tstring EXIT_EVENT;
 
-	static const tstring MUT_CLI_READ;
 	static const tstring MUT_CLI_WRITE;
 };
 
