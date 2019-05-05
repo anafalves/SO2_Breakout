@@ -2,11 +2,17 @@
 
 int Client::idCounter = 1;
 
-tostream& operator <<(tostream & tos, const Client & cli) {
+tstring Client::getAsString() {
 	tstringstream tss;
 
-	tss << "Client: " << cli.getId() << " :: " << cli.getName() << " :: " << cli.isInGame() << endl;
+	tss << getId() << TEXT(" :: ") << getName() << TEXT(" :: ");
+	
+	if (isInGame()) {
+		tss << TEXT("In-Game") << endl;
+	}
+	else {
+		tss << TEXT("In-Lobby") << endl;
+	}
 
-	tos << tss.str();
-	return tos;
+	return tss.str();
 }

@@ -79,8 +79,10 @@ ClientManager::~ClientManager() {
 tstring ClientManager::getClientsAsString() const{
 	tstringstream tss;
 
+	tss << TEXT("Listing [ ") << clients.size() << TEXT(" ] client(s): ") << endl;
+	tss << TEXT("id :: name :: status") << endl << endl;
 	for (const auto &client : clients) {
-		tss << client;
+		tss << TEXT(" - ") << client->getAsString();
 	}
 
 	return tss.str();
@@ -88,8 +90,8 @@ tstring ClientManager::getClientsAsString() const{
 
 tostream& operator <<(tostream & tos, const ClientManager& cli) {
 	tstringstream tss;
+
+	tos << cli.getClientsAsString();
 	
-	tss << cli.getClientsAsString();
-	tos << tss.str();
 	return tos;
 }

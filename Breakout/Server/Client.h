@@ -51,9 +51,9 @@ public:
 
 	virtual void sendUpdate() {};
 
+	virtual tstring getAsString();
+
 	~Client() {
 		player->active = false;
 	};
 };
-
-tostream& operator <<(tostream & tos, const Client & cli);

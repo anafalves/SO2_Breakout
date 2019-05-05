@@ -2,11 +2,12 @@
 
 void displayHelp() {
 	tcout << "Command list: " << endl;
-	tcout << "\t \'help\' -> displays this help message" << endl;
-	tcout << "\t \'exit\' -> Closes server" << endl;
-	tcout << "\t \'show top10\' -> display a list with the top 10 players" << endl;
-	tcout << "\t \'show configs\' -> display a list with the server's game configs" << endl;
-	tcout << "\t \'addtotop10 <player name> <points>\' - adds an user to the top 10 player's list, if their points are high enough" << endl;
+	tcout << "\t \'help\' -> Displays this help message." << endl;
+	tcout << "\t \'exit\' -> Closes server." << endl;
+	tcout << "\t \'show top10\' -> Displays a list with the top 10 players." << endl;
+	tcout << "\t \'show configs\' -> Displays a list with the server's game configs." << endl;
+	tcout << "\t \'show clients\' -> Displays a list of clients signed-in the server." << endl;
+	tcout << "\t \'addtotop10 <player name> <points>\' - adds an user to the top 10 player's list if their points are high enough." << endl;
 }
 
 void ClearScreen()
@@ -81,7 +82,7 @@ void ServerInterface::handleCommand(tstring command, vector<tstring> argv) {
 	if (command == TEXT("show"))
 	{
 		if (argv.size() != (unsigned)1) {
-			tcout << "invalid arguments, show usage: show top10 / show configs" << endl;
+			tcout << "invalid arguments, show usage: show top10 / show configs / show clients" << endl;
 			return;
 		}
 
@@ -90,6 +91,9 @@ void ServerInterface::handleCommand(tstring command, vector<tstring> argv) {
 		}
 		else if (argv[0] == TEXT("configs")) {
 			tcout << Server::config;
+		}
+		else if (argv[0] == TEXT("clients")) {
+			tcout << Server::clients;
 		}
 		else {
 			tcout << command << " " << argv[0] << " does not exists!" << endl;
