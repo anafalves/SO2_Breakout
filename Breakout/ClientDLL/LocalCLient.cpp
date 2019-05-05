@@ -19,11 +19,12 @@ bool LocalCLient::login(TCHAR * name)
 }
 
 GameData LocalCLient::receiveBroadcast() {
-	HANDLE update[2];
-	update[0] = sharedMemmoryContent.hUpdateEvent;
-	update[1] = sharedMemmoryContent.hExitEvent;
+	//HANDLE update[2];
+	//update[0] = sharedMemmoryContent.hUpdateEvent;
+	//update[1] = sharedMemmoryContent.hExitEvent; //TODO: make this verification outside of here, so that the client can quit. or something else
 
-	WaitForMultipleObjects(2, update, false, INFINITE);
+	//WaitForMultipleObjects(2, update, false, INFINITE);
+	WaitForSingleObject(sharedMemmoryContent.hUpdateEvent, INFINITE);
 	return (*sharedMemmoryContent.viewGameData);
 }
 

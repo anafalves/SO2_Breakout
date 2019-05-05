@@ -6,7 +6,8 @@ Client * getClientInstance() {
 	if (server == NULL) {
 		//Is remote
 		tcout << "Is remote, but doesn't work!" << endl;
-		//return new RemoteClient();
+		//TODO: return new RemoteClient();
+		return NULL;
 	}
 	else {
 		//Is local
