@@ -13,7 +13,7 @@ private:
 	bool localClientHandlerRunning;
 
 	HANDLE hBroadcastThread;
-	bool isBroadcastRunning;
+	bool broadcastRunning;
 
 	//TODO: add other handlers here!
 	HANDLE hRemoteMsgHandler;
@@ -27,27 +27,25 @@ public:
 		hLocalClientHandler = nullptr;
 		localClientHandlerRunning = false;
 
+		hBroadcastThread = nullptr;
+		broadcastRunning = false;
+
 		hRemoteMsgHandler = nullptr;
 		remoteMsgHandlerRunning = false;
 	};
 
-	bool isBallThreadRunning() const {
-		return ballThreadRunning;
-	}
+	bool isBallThreadRunning() const;
+	bool isBroadcastRunning() const;
+	bool isLocalClientHandlerRunning() const;
 
 	bool startLocalClientHandler();
 	bool startBallThread();
 
-	void endBallThread() {//TODO: might need to do something else to end the thread ( close handles and what not )
-		ballThreadRunning = false;
-		CloseHandle(hBallThread);
-	}
+	void endBallThread();
+	void endGameDataBroadcasterThread();
+	void endLocalClientHandler();
 
-	void waitForLocalClientThread() {
-		WaitForSingleObject(hLocalClientHandler, INFINITE);
-	}
-
-	void waitForBallThread() {
-		WaitForSingleObject(hBallThread, INFINITE);
-	}
+	void waitForGameDataBroadcaster();
+	void waitForLocalClientThread();
+	void waitForBallThread();
 };
