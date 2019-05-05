@@ -15,7 +15,7 @@ enum ServerMessages {
 };
 
 enum ClientMessages {
-	LOGIN = 0,
+	LOGIN = 1,
 	LEAVE,
 	MOVE,
 	PRECISE_MOVE,
