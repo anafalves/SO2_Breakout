@@ -4,7 +4,7 @@
 #include "..\ClientDLL\Communication.h"
 #include "..\Server\Messages.h"
 
-Client * client;
+Client * client; //TODO: add func client.quit() so that it opens it's own quit event and ends the waits
 HANDLE thread = INVALID_HANDLE_VALUE;
 bool CONTINUE;
 
@@ -29,6 +29,10 @@ int _tmain(int argc, TCHAR ** argv) {
 	CONTINUE = true;
 	client = getClientInstance();
 	
+	if (client == NULL) {
+		tcout << "could not create client instance!" << endl;
+	}
+
 	alreadyRunning = CreateEvent(NULL,TRUE,FALSE, TEXT("LocalClientRunning"));
 	if (alreadyRunning == INVALID_HANDLE_VALUE) {
 		return -1;
@@ -53,6 +57,7 @@ int _tmain(int argc, TCHAR ** argv) {
 
 	WaitForSingleObject(thread, INFINITE);
 	CloseHandle(alreadyRunning);
+	delete client;
 
 	return 0;
 }
