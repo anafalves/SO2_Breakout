@@ -75,3 +75,21 @@ ClientManager::~ClientManager() {
 
 	clients.clear();
 }
+
+tstring ClientManager::getClientsAsString() const{
+	tstringstream tss;
+
+	for (const auto &client : clients) {
+		tss << client;
+	}
+
+	return tss.str();
+}
+
+tostream& operator <<(tostream & tos, const ClientManager& cli) {
+	tstringstream tss;
+	
+	tss << cli.getClientsAsString();
+	tos << tss.str();
+	return tos;
+}

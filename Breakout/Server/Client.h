@@ -56,3 +56,4 @@ public:
 	};
 };
 
+tostream& operator <<(tostream & tos, const Client & cli);
