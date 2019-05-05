@@ -3,8 +3,8 @@
 
 DWORD WINAPI BallManager(LPVOID args) {
 
-	bool *CONTINUE = (bool *) args;
-	(*CONTINUE)= true;
+	bool * CONTINUE = (bool *) args;
+	*CONTINUE = true;
 	int time = Server::config.getMovementSpeed() * 10;
 
 	Server::gameData.setupGameStart();
@@ -16,7 +16,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 		Server::gameData.moveActiveBalls();
 		Server::sharedMemory.setUpdate();
 	}
-
+	tcout << "Ball Thread Ended" << endl;
 	return 0;
 }
 
@@ -52,12 +52,14 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	bool * CONTINUE = (bool *)args;
 	ClientMsg message;
 
-	(*CONTINUE) = true;
+	*CONTINUE = true;
 
 	while (*CONTINUE) {
 		message = Server::sharedMemory.readMessage();
 		handleMessage(message);
 	}
+
+	tcout << "Client Handler thread ended" << endl;
 
 	return 0;
 }
@@ -76,6 +78,8 @@ DWORD WINAPI GameDataBroadcast(LPVOID args) {
 		//TODO: Broadcast gameData to all PIPE clients
 
 	}
+
+	tcout << "Game Broadcast Thread Ended" << endl;
 
 	return 0;
 }
@@ -106,4 +110,43 @@ bool ThreadManager::startBallThread() {
 	}
 
 	return true;
+}
+
+bool ThreadManager::isBroadcastRunning() const {
+	return broadcastRunning;
+}
+
+bool ThreadManager::isBallThreadRunning() const {
+	return ballThreadRunning;
+}
+
+bool ThreadManager::isLocalClientHandlerRunning() const {
+	return localClientHandlerRunning;
+}
+
+void ThreadManager::endBallThread() {
+	ballThreadRunning = false;
+}
+
+void ThreadManager::endLocalClientHandler() {
+	localClientHandlerRunning = false;
+}
+
+void ThreadManager::endGameDataBroadcasterThread(){
+	 broadcastRunning = false;
+}
+
+void ThreadManager::waitForGameDataBroadcaster() {
+	WaitForSingleObject(hBroadcastThread, INFINITE);
+	CloseHandle(hBroadcastThread);
+}
+
+void ThreadManager::waitForLocalClientThread() {
+	WaitForSingleObject(hLocalClientHandler, INFINITE);
+	CloseHandle(hLocalClientHandler);
+}
+
+void ThreadManager::waitForBallThread() {
+	WaitForSingleObject(hBallThread, INFINITE);
+	CloseHandle(hBallThread);
 }

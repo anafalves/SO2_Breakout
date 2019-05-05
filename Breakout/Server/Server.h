@@ -23,7 +23,6 @@ enum ErrorCodes{
 	SHARED_MEMORY_ERROR,
 	LOCAL_CLIENT_HANDLER_ERROR,
 
-	
 };
 
 using namespace std;
@@ -84,14 +83,15 @@ public:
 		return SERVER_STARTED;
 	}
 
+	static void exitServer() {
 
+		SetEvent(sharedMemory.hExitEvent);
+		threadManager.endBallThread();
+		threadManager.endGameDataBroadcasterThread();
+		threadManager.endLocalClientHandler();
 
-	static void waitForThreads() {
 		threadManager.waitForBallThread();
+		threadManager.waitForGameDataBroadcaster();
 		threadManager.waitForLocalClientThread();
-	}
-
-	static void showConfigs() {
-		tcout << config;
 	}
 };

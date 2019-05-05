@@ -167,5 +167,5 @@ void ServerInterface::startServer(tstring filename) {
 
 	startCommandLine();
 
-	Server::waitForThreads();
+	Server::exitServer();
 }
