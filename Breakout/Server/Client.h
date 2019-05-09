@@ -21,39 +21,16 @@ private:
 	bool inGame;
 
 public:
-	Client(std::tstring pname, Player * p)
-		:name(pname), player(p), id(idCounter++)
-	{
-		p->active = true;
-		p->id = id;
-		_tcscpy_s(p->name, pname.c_str());
-	};
+	Client(std::tstring pname, Player * p);
 
-	int getId() const {
-		return id;
-	}
+	int getId() const;
+	tstring getName() const;
+	bool isInGame() const;
+	void setInGame(bool status);
+	Player * getPlayer();
 
-	std::tstring getName() const {
-		return name;
-	}
-
-	bool isInGame() const {
-		return inGame;
-	}
-
-	void setInGame(bool status) {
-		inGame = status;
-	}
-
-	Player * getPlayer() {
-		return player;
-	}
-
-	virtual void sendUpdate() {};
-
+	virtual void sendUpdate();
 	virtual tstring getAsString();
 
-	~Client() {
-		player->active = false;
-	};
+	~Client();
 };
