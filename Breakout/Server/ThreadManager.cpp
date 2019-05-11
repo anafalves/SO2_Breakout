@@ -1,22 +1,48 @@
 #include "ThreadManager.h"
 #include "Server.h"
 
-DWORD WINAPI BallManager(LPVOID args) {
+enum TimeConversions {
+	MILLISECOND = 1000 * 10,
+};
 
-	bool * CONTINUE = (bool *) args;
+void APIENTRY MoveBall() {
+
+}
+
+DWORD WINAPI BallManager(LPVOID args) {
+	HANDLE hTimer = NULL;
+	LARGE_INTEGER liDueTime;
+	bool * CONTINUE = (bool *)args;
+
+	liDueTime.QuadPart = 100LL;//(long long) -100 * (MILLISECOND);
 	*CONTINUE = true;
-	int time = Server::config.getMovementSpeed() * 10;
+
+	// Create an unnamed waitable timer.
+	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+	if (NULL == hTimer)
+	{
+		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
 
 	Server::gameData.setupGameStart();
 	//TODO: sperar pelo sem�foro / mutex de inicio do jogo para poder avan�ar
 
+	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
+		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
 	while (*CONTINUE)
 	{
-		Sleep(time);
+		WaitForSingleObject(hTimer, INFINITE);
+
 		Server::gameData.moveActiveBalls();
 		Server::sharedMemory.setUpdate();
 	}
 	tcout << "Ball Thread Ended" << endl;
+	CloseHandle(hTimer);
+
 	return 0;
 }
 
