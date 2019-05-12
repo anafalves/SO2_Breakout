@@ -126,7 +126,7 @@
     <ClCompile Include="RemoteClient.cpp" />
     <ClCompile Include="ServerInterface.cpp" />
     <ClCompile Include="ThreadManager.cpp" />
-    <ClCompile Include="SharedMemoryConstants.cpp" />
+    <ClCompile Include="GeneralConstants.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="SharedMemoryManager.cpp" />
     <ClCompile Include="Top10Manager.cpp" />
@@ -144,7 +144,7 @@
     <ClInclude Include="ServerInterface.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="Messages.h" />
-    <ClInclude Include="SharedMemoryConstants.h" />
+    <ClInclude Include="GeneralConstants.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="SharedMemoryManager.h" />
     <ClInclude Include="Top10Manager.h" />

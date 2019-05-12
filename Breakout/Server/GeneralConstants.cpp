@@ -1,4 +1,4 @@
-#include "SharedMemoryConstants.h"
+#include "GeneralConstants.h"
 
 const tstring SharedMemoryConstants::SHA_MEM_GAMEDATA = TEXT("SharedMemoryGameData");
 

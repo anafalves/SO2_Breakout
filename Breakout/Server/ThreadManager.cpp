@@ -131,6 +131,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 	// 4 - After connectiing the thread creates and adds the user to the active users pool.
 	// 5 - Once the user leaves, crashes or pipe closes/error, the thread removes the user from the pool.
 	// 6 - The thread breaks the cycle and stop.
+	return 0;
 }
 
 DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
