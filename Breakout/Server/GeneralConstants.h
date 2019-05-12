@@ -22,3 +22,6 @@ struct SharedMemoryConstants
 	static const tstring MUT_CLI_WRITE;
 };
 
+struct PipeConstants {
+
+};

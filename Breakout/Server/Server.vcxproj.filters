@@ -51,9 +51,6 @@
     <ClCompile Include="SharedMemoryManager.cpp">
       <Filter>Source Files\Game\GameData</Filter>
     </ClCompile>
-    <ClCompile Include="SharedMemoryConstants.cpp">
-      <Filter>Source Files\Communication</Filter>
-    </ClCompile>
     <ClCompile Include="ThreadManager.cpp">
       <Filter>Source Files\Game</Filter>
     </ClCompile>
@@ -90,6 +87,9 @@
     <ClCompile Include="ServerInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeneralConstants.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -105,9 +105,6 @@
       <Filter>Header Files\Game\GameData</Filter>
     </ClInclude>
     <ClInclude Include="Messages.h">
-      <Filter>Header Files\Communication</Filter>
-    </ClInclude>
-    <ClInclude Include="SharedMemoryConstants.h">
       <Filter>Header Files\Communication</Filter>
     </ClInclude>
     <ClInclude Include="ThreadManager.h">
@@ -141,6 +138,9 @@
       <Filter>Header Files\Communication\ClientClasses</Filter>
     </ClInclude>
     <ClInclude Include="ServerInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneralConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

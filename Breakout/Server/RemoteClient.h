@@ -4,20 +4,21 @@ class RemoteClient : public Client
 {
 private:
 	HANDLE hPipe;
-	HANDLE hThread;
+	HANDLE hPipeGameData;
 
 public:
-	RemoteClient(std::tstring username, Player * p, HANDLE pipe, HANDLE thread)
-		:Client(username, p), hPipe(pipe), hThread(thread)
-	{};
-
-	//TODO: move this to cpp
-	void sendMessage() {
-		//TODO: Send Message
+	RemoteClient(tstring username, Player * p, HANDLE pipe, HANDLE hGamedata)
+		:Client(username, p), hPipe(pipe), hPipeGameData(hGamedata)
+	{
 	}
 
 	~RemoteClient() {
-		//TODO: Disconnect pipe and close stuff as such.
+		FlushFileBuffers(hPipe);
+		FlushFileBuffers(hPipeGameData);
+		DisconnectNamedPipe(hPipe);
+		DisconnectNamedPipe(hPipeGameData);
+		CloseHandle(hPipe);
+		CloseHandle(hPipeGameData);
 	}
 };
 

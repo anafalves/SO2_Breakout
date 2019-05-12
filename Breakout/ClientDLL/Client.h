@@ -4,7 +4,7 @@
 #include "../Server/UnicodeConfigs.h"
 #include "../Server/GameData.h"
 #include "../Server/Messages.h"
-#include "../Server/SharedMemoryConstants.h"
+#include "../Server/GeneralConstants.h"
 
 class Client
 {

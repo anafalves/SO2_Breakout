@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "../Server/Messages.h"
-#include "../Server/SharedMemoryConstants.h"
+#include "../Server/GeneralConstants.h"
 #include "../Server/GameData.h"
 
 class SharedMemoryManager
