@@ -1,6 +1,12 @@
 #pragma once
 #include <Windows.h>
+#include <tchar.h>
 #include "UnicodeConfigs.h"
+
+enum ThreadConstants {
+	SPEEDFACTOR = 10,
+	BUFFERSIZE = 4096,
+};
 
 class Server;
 

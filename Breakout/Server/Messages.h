@@ -65,6 +65,7 @@ typedef struct {
 }ServerMsg;
 //end
 
+//Shared Memory Buffers
 typedef struct {
 	ClientMsg buffer[MAX_MESSAGE_BUFFER_SIZE];
 	int read_pos, write_pos;
