@@ -22,7 +22,7 @@ public:
 
 	virtual bool login(TCHAR * name) = 0;
 	virtual GameData receiveBroadcast() = 0;
-	virtual void sendMessage(ClientMsg message) = 0;
+	virtual bool sendMessage(ClientMsg message) = 0;
 	virtual ServerMsg receiveMessage() = 0;
 	virtual ServerMsg receiveMessageWithTimeout() = 0;
 };

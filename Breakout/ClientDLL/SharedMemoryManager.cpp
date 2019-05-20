@@ -128,11 +128,11 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to open gamedata update event");
 	}
 
-	hExitEvent = OpenEvent(EVENT_ALL_ACCESS, false, SharedMemoryConstants::EXIT_EVENT.c_str());
+	hExitEvent = CreateEvent(NULL, false, false, NULL);
 	if (hExitEvent == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to open gamedata update event");
+		throw TEXT("Error while trying to create gamedata update event");
 	}
 
 	hClientWriteMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_WRITE.c_str());
