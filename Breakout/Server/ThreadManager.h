@@ -8,6 +8,11 @@ enum ThreadConstants {
 	BUFFERSIZE = 4096,
 };
 
+typedef struct {
+	HANDLE pipe;
+	bool * CONTINUE;
+}PipeInfo;
+
 class Server;
 
 class ThreadManager {

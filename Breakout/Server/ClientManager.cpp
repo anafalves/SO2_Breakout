@@ -1,49 +1,18 @@
 #include "ClientManager.h"
 #include "Server.h"
 
-int ClientManager::AddClient(std::tstring name, int &myId) {
-	if (clients.size() >= (unsigned int)Server::config.getMaxPlayerCount()) {
-		return DENY_SERVER_FULL;
-	}
-
-	for (auto &client : clients) {
-		if (client->getName() == name) {
-			return DENY_USERNAME;
-		}
-	}
-
-	Player * p = Server::gameData.getAvailablePlayer();
-	if (p == nullptr) {
-		return -1;
-	}
-
+void ClientManager::AddClient(std::tstring name, Player * p, int &myId) {
 	LocalClient * temp = new LocalClient(name, p);
 	myId = temp->getId();
 
 	clients.push_back(temp);
-
-	return ACCEPT;
 }
 
-int ClientManager::AddClient(std::tstring name, HANDLE pipe, HANDLE thread){
-	if (clients.size() >= (unsigned int) Server::config.getMaxPlayerCount()) {
-		return DENY_SERVER_FULL;
-	}
+void ClientManager::AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId){
+	RemoteClient * client = new RemoteClient(name, p, hPipe, hGameDataPipe);
+	myId = client->getId();
 
-	for (auto &client : clients) {
-		if (client->getName() == name) {
-			return DENY_USERNAME;
-		}
-	}
-
-	Player * p = Server::gameData.getAvailablePlayer();
-	if (p == nullptr) {
-		return -1;
-	}
-
-	clients.push_back(new RemoteClient(name,p,pipe,thread));
-
-	return ACCEPT;
+	clients.push_back(client);
 }
 
 bool ClientManager::removeClient(std::tstring name) {
@@ -68,12 +37,24 @@ bool ClientManager::removeClient(int id) {
 	return false;
 }
 
-ClientManager::~ClientManager() {
-	for (auto &client : clients) {
-		delete client;
+void ClientManager::broadcastGameData() {
+	for (auto const &client : clients) {
+		client->sendUpdate();
+	}
+}
+
+bool ClientManager::isNameAvailable(std::tstring name) const {
+	for (const auto &client : clients) {
+		if (client->getName() == name) {
+			return false;
+		}
 	}
 
-	clients.clear();
+	return true;
+}
+
+bool ClientManager::hasRoom() const {
+	return clients.size() < (unsigned int)Server::config.getMaxPlayerCount();
 }
 
 tstring ClientManager::getClientsAsString() const{
@@ -86,6 +67,14 @@ tstring ClientManager::getClientsAsString() const{
 	}
 
 	return tss.str();
+}
+
+ClientManager::~ClientManager() {
+	for (auto &client : clients) {
+		delete client;
+	}
+
+	clients.clear();
 }
 
 tostream& operator <<(tostream & tos, const ClientManager& cli) {
