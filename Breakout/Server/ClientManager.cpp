@@ -1,21 +1,51 @@
 #include "ClientManager.h"
 #include "Server.h"
 
+ClientManager::ClientManager() {
+	hClientMutex = CreateMutex(NULL, FALSE, NULL);
+	if (hClientMutex == NULL) {
+		throw EXCEPTION_ACCESS_VIOLATION;
+	}
+}
+
 void ClientManager::AddClient(std::tstring name, Player * p, int &myId) {
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+
 	LocalClient * temp = new LocalClient(name, p);
 	myId = temp->getId();
-
 	clients.push_back(temp);
+
+	ReleaseMutex(modify);
 }
 
 void ClientManager::AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId){
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+	
 	RemoteClient * client = new RemoteClient(name, p, hPipe, hGameDataPipe);
 	myId = client->getId();
-
 	clients.push_back(client);
+
+	ReleaseMutex(hClientMutex);
 }
 
 bool ClientManager::removeClient(std::tstring name) {
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getName() == name) {
 			clients.erase(clients.begin() + i);
@@ -23,10 +53,19 @@ bool ClientManager::removeClient(std::tstring name) {
 		}
 	}
 
+	ReleaseMutex(hClientMutex);
+
 	return false;
 }
 
 bool ClientManager::removeClient(int id) {
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getId() == id) {
 			clients.erase(clients.begin() + i);
@@ -34,27 +73,59 @@ bool ClientManager::removeClient(int id) {
 		}
 	}
 
+	ReleaseMutex(hClientMutex);
+
 	return false;
 }
 
 void ClientManager::broadcastGameData() {
+	HANDLE access[2];
+
+	access[0] = hClientMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
+
 	for (auto const &client : clients) {
 		client->sendUpdate();
 	}
+
+	ReleaseMutex(hClientMutex);
 }
 
 bool ClientManager::isNameAvailable(std::tstring name) const {
+	HANDLE access[2];
+
+	access[0] = hClientMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
+
 	for (const auto &client : clients) {
 		if (client->getName() == name) {
 			return false;
 		}
 	}
 
+	ReleaseMutex(hClientMutex);
+
 	return true;
 }
 
 bool ClientManager::hasRoom() const {
-	return clients.size() < (unsigned int)Server::config.getMaxPlayerCount();
+	bool result;
+	HANDLE access[2];
+
+	access[0] = hClientMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
+
+	result = clients.size() < (unsigned int)Server::config.getMaxPlayerCount();
+
+	ReleaseMutex(hClientMutex);
+
+	return result;
 }
 
 tstring ClientManager::getClientsAsString() const{

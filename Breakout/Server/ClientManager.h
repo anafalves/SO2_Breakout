@@ -10,8 +10,10 @@
 class ClientManager {
 private:
 	std::vector<Client *> clients;
+	HANDLE hClientMutex;
 
 public:
+	ClientManager();
 	void AddClient(std::tstring name, Player * p, int & myId);
 	void AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId);
 	bool removeClient(std::tstring name);
