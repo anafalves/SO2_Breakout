@@ -6,7 +6,13 @@
 #include "../Server/Messages.h"
 #include "../Server/GeneralConstants.h"
 
-class Client
+#ifdef CLIENTDLL_EXPORTS
+#define CLIENT_API __declspec(dllexport)
+#else
+#define CLIENT_API __declspec(dllimport)
+#endif
+
+class CLIENT_API Client
 {
 private:
 	int client_id;//variable to control the reading cycle of the memmory buffer
@@ -22,7 +28,7 @@ public:
 
 	virtual bool login(TCHAR * name) = 0;
 	virtual GameData receiveBroadcast() = 0;
-	virtual void sendMessage(ClientMsg message) = 0;
+	virtual bool sendMessage(ClientMsg message) = 0;
 	virtual ServerMsg receiveMessage() = 0;
 	virtual ServerMsg receiveMessageWithTimeout() = 0;
 };

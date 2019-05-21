@@ -23,5 +23,6 @@ struct SharedMemoryConstants
 };
 
 struct PipeConstants {
-
+	static const tstring MESSAGE_PIPE_NAME;
+	static const tstring GAMEDATA_PIPE_NAME;
 };

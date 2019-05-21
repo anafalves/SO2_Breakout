@@ -9,4 +9,5 @@
 #define CLIENT_API __declspec(dllimport)
 #endif
 
-CLIENT_API Client * getClientInstance();
+extern "C" CLIENT_API LocalCLient * getLocalClientInstance();
+extern "C" CLIENT_API RemoteClient * getRemoteClientInstance();

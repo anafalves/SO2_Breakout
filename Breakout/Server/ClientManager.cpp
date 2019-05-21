@@ -1,52 +1,51 @@
 #include "ClientManager.h"
 #include "Server.h"
 
-int ClientManager::AddClient(std::tstring name, int &myId) {
-	if (clients.size() >= (unsigned int)Server::config.getMaxPlayerCount()) {
-		return DENY_SERVER_FULL;
+ClientManager::ClientManager() {
+	hClientMutex = CreateMutex(NULL, FALSE, NULL);
+	if (hClientMutex == NULL) {
+		throw EXCEPTION_ACCESS_VIOLATION;
 	}
+}
 
-	for (auto &client : clients) {
-		if (client->getName() == name) {
-			return DENY_USERNAME;
-		}
-	}
+void ClientManager::AddClient(std::tstring name, Player * p, int &myId) {
+	HANDLE modify[2];
 
-	Player * p = Server::gameData.getAvailablePlayer();
-	if (p == nullptr) {
-		return -1;
-	}
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
 
 	LocalClient * temp = new LocalClient(name, p);
 	myId = temp->getId();
-
 	clients.push_back(temp);
 
-	return ACCEPT;
+	ReleaseMutex(hClientMutex);
 }
 
-int ClientManager::AddClient(std::tstring name, HANDLE pipe, HANDLE thread){
-	if (clients.size() >= (unsigned int) Server::config.getMaxPlayerCount()) {
-		return DENY_SERVER_FULL;
-	}
+void ClientManager::AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId){
+	HANDLE modify[2];
 
-	for (auto &client : clients) {
-		if (client->getName() == name) {
-			return DENY_USERNAME;
-		}
-	}
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
 
-	Player * p = Server::gameData.getAvailablePlayer();
-	if (p == nullptr) {
-		return -1;
-	}
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+	
+	RemoteClient * client = new RemoteClient(name, p, hPipe, hGameDataPipe);
+	myId = client->getId();
+	clients.push_back(client);
 
-	clients.push_back(new RemoteClient(name,p,pipe,thread));
-
-	return ACCEPT;
+	ReleaseMutex(hClientMutex);
 }
 
 bool ClientManager::removeClient(std::tstring name) {
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getName() == name) {
 			clients.erase(clients.begin() + i);
@@ -54,10 +53,19 @@ bool ClientManager::removeClient(std::tstring name) {
 		}
 	}
 
+	ReleaseMutex(hClientMutex);
+
 	return false;
 }
 
 bool ClientManager::removeClient(int id) {
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getId() == id) {
 			clients.erase(clients.begin() + i);
@@ -65,15 +73,59 @@ bool ClientManager::removeClient(int id) {
 		}
 	}
 
+	ReleaseMutex(hClientMutex);
+
 	return false;
 }
 
-ClientManager::~ClientManager() {
-	for (auto &client : clients) {
-		delete client;
+void ClientManager::broadcastGameData() {
+	HANDLE access[2];
+
+	access[0] = hClientMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
+
+	for (auto const &client : clients) {
+		client->sendUpdate();
 	}
 
-	clients.clear();
+	ReleaseMutex(hClientMutex);
+}
+
+bool ClientManager::isNameAvailable(std::tstring name) const {
+	HANDLE access[2];
+
+	access[0] = hClientMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
+
+	for (const auto &client : clients) {
+		if (client->getName() == name) {
+			return false;
+		}
+	}
+
+	ReleaseMutex(hClientMutex);
+
+	return true;
+}
+
+bool ClientManager::hasRoom() const {
+	bool result;
+	HANDLE access[2];
+
+	access[0] = hClientMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
+
+	result = clients.size() < (unsigned int)Server::config.getMaxPlayerCount();
+
+	ReleaseMutex(hClientMutex);
+
+	return result;
 }
 
 tstring ClientManager::getClientsAsString() const{
@@ -86,6 +138,14 @@ tstring ClientManager::getClientsAsString() const{
 	}
 
 	return tss.str();
+}
+
+ClientManager::~ClientManager() {
+	for (auto &client : clients) {
+		delete client;
+	}
+
+	clients.clear();
 }
 
 tostream& operator <<(tostream & tos, const ClientManager& cli) {

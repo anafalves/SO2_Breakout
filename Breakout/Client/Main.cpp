@@ -19,15 +19,33 @@ DWORD WINAPI receiveBallUpdates() {
 	return 0;
 }
 
+
 int _tmain(int argc, TCHAR ** argv) {
 
-	if (argc != 2) {
+	if (argc < 2 || argc > 3) {
 		return -1;
 	}
 
 	HANDLE alreadyRunning = INVALID_HANDLE_VALUE;
 	CONTINUE = true;
-	client = getClientInstance();
+
+	if(argc == 2){
+		LocalCLient * local = getLocalClientInstance();
+		client = local;
+	}
+	else {
+		RemoteClient * temp = getRemoteClientInstance();
+
+		temp->connect(argv[2]);
+		
+		if (!temp->isConnected()) {
+			tcout << "couldn't connect to remote server!... quitting" << endl;
+			return 0;
+		}
+
+		client = temp;
+	}
+
 	
 	if (client == NULL) {
 		tcout << "could not create client instance!" << endl;
@@ -39,7 +57,7 @@ int _tmain(int argc, TCHAR ** argv) {
 	}
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		tcout << "A local client is already running, you will join as espectator!" << endl;
+		tcout << "A client is already running in this computer!" << endl;
 		thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)receiveBallUpdates, NULL, 0, NULL);
 	}
 	else 
@@ -54,10 +72,10 @@ int _tmain(int argc, TCHAR ** argv) {
 
 	_gettchar();
 	CONTINUE = false;
+	delete client;
 
 	WaitForSingleObject(thread, INFINITE);
 	CloseHandle(alreadyRunning);
-	delete client;
 
 	return 0;
 }

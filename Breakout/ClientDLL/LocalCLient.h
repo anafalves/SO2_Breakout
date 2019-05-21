@@ -3,20 +3,19 @@
 #include "SharedMemoryManager.h"
 #include "../Server/Messages.h"
 
-class LocalCLient :
-	public Client
+class CLIENT_API LocalCLient : public Client
 {
 private:
 	SharedMemoryManager sharedMemmoryContent;
 
 public:
 	LocalCLient()
-		:Client()
+	:Client()
 	{};
 
 	bool login(TCHAR * name);
 	GameData receiveBroadcast();
-	void sendMessage(ClientMsg msg);
+	bool sendMessage(ClientMsg msg);
 	ServerMsg receiveMessage();
 	ServerMsg receiveMessageWithTimeout();
 };

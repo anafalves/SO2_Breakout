@@ -8,6 +8,11 @@ enum ThreadConstants {
 	BUFFERSIZE = 4096,
 };
 
+typedef struct {
+	HANDLE pipe;
+	bool * CONTINUE;
+}PipeInfo;
+
 class Server;
 
 class ThreadManager {
@@ -21,9 +26,8 @@ private:
 	HANDLE hBroadcastThread;
 	bool broadcastRunning;
 
-	//TODO: add other handlers here!
-	HANDLE hRemoteMsgHandler;
-	bool remoteMsgHandlerRunning;
+	HANDLE hRemoteConnectionHandler;
+	bool remoteConnectionHandlerRunning;
 
 public:
 	ThreadManager() {
@@ -36,22 +40,27 @@ public:
 		hBroadcastThread = nullptr;
 		broadcastRunning = false;
 
-		hRemoteMsgHandler = nullptr;
-		remoteMsgHandlerRunning = false;
+		hRemoteConnectionHandler = nullptr;
+		remoteConnectionHandlerRunning = false;
 	};
 
 	bool isBallThreadRunning() const;
 	bool isBroadcastRunning() const;
 	bool isLocalClientHandlerRunning() const;
+	bool isRemoteConnectionHandlerRunning() const;
 
+	bool startGameDataBroadcaster();
 	bool startLocalClientHandler();
+	bool startRemoteConnectionHandler();
 	bool startBallThread();
 
 	void endBallThread();
 	void endGameDataBroadcasterThread();
 	void endLocalClientHandler();
+	void endRemoteConnectionHandler();
 
 	void waitForGameDataBroadcaster();
 	void waitForLocalClientThread();
+	void waitForRemoteConnectionThread();
 	void waitForBallThread();
 };
