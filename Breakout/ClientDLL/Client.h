@@ -6,7 +6,13 @@
 #include "../Server/Messages.h"
 #include "../Server/GeneralConstants.h"
 
-class Client
+#ifdef CLIENTDLL_EXPORTS
+#define CLIENT_API __declspec(dllexport)
+#else
+#define CLIENT_API __declspec(dllimport)
+#endif
+
+class CLIENT_API Client
 {
 private:
 	int client_id;//variable to control the reading cycle of the memmory buffer

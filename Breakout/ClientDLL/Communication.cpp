@@ -1,7 +1,7 @@
 #include "Communication.h"
 
 LocalCLient * getLocalClientInstance() {
-		return new LocalCLient();
+	return new LocalCLient();
 }
 
 RemoteClient * getRemoteClientInstance() {

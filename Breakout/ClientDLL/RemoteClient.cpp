@@ -41,6 +41,8 @@ bool RemoteClient::connect(TCHAR * ipAddr) {
 		NULL
 	);
 
+	tcout << "connecting to:" << pipeName << endl;
+
 	if (hPipeMessage != INVALID_HANDLE_VALUE) {
 		dwState = PIPE_READMODE_MESSAGE;
 

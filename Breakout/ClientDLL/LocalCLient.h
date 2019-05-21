@@ -3,7 +3,7 @@
 #include "SharedMemoryManager.h"
 #include "../Server/Messages.h"
 
-class LocalCLient : public Client
+class CLIENT_API LocalCLient : public Client
 {
 private:
 	SharedMemoryManager sharedMemmoryContent;

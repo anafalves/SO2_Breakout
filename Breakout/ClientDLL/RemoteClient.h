@@ -2,7 +2,7 @@
 #include "Client.h"
 #include "..\Server\Messages.h"
 
-class RemoteClient : public Client
+class CLIENT_API RemoteClient : public Client
 {
 private:
 	HANDLE hWriteMutex;
