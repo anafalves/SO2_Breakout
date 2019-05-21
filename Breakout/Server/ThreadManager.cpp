@@ -86,6 +86,9 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 					if (player != nullptr) {
 						tcout << "Something went wront while trying to get a pointer to an available player while there's still room." << endl;
 						ACTIVE = false;
+						reply.type = DENY_SERVER_FULL; //todo: CHANGE THIS
+						Server::sharedMemory.writeMessage(reply);
+						break;
 					}
 					Server::clients.AddClient(request.message.name, player, reply.id);
 					
@@ -271,7 +274,7 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 
 	while (*CONTINUE) {
 		clientInfo = (PipeInfo *)malloc(sizeof(PipeInfo));
-		if (clientInfo != NULL)
+		if (clientInfo == NULL)
 		{
 			tcout << "Memory couldn't be allocated" << endl;
 			break;
@@ -298,7 +301,7 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 		}
 
 		clientConnected = ConnectNamedPipe(clientInfo->pipe, NULL);
-		if (!clientConnected && (GetLastError() == ERROR_PIPE_CONNECTED))
+		if (clientConnected || (GetLastError() == ERROR_PIPE_CONNECTED))
 			clientConnected = true;
 
 		if (clientConnected) {
@@ -356,6 +359,21 @@ bool ThreadManager::startLocalClientHandler(){
 	return true;
 }
 
+bool ThreadManager::startRemoteConnectionHandler() {
+	if (remoteConnectionHandlerRunning) {
+		return false;
+	}
+
+	hRemoteConnectionHandler = CreateThread(nullptr, 0, RemoteConnectionHandler,
+		(LPVOID)&remoteConnectionHandlerRunning, 0, nullptr);
+
+	if (hRemoteConnectionHandler == nullptr) {
+		return false;
+	}
+
+	return true;
+}
+
 bool ThreadManager::startBallThread() {
 	if (ballThreadRunning) {
 		return false;
@@ -381,6 +399,11 @@ bool ThreadManager::isLocalClientHandlerRunning() const {
 	return localClientHandlerRunning;
 }
 
+bool ThreadManager::isRemoteConnectionHandlerRunning() const {
+	return remoteConnectionHandlerRunning;
+}
+
+
 void ThreadManager::endBallThread() {
 	ballThreadRunning = false;
 }
@@ -389,8 +412,17 @@ void ThreadManager::endLocalClientHandler() {
 	localClientHandlerRunning = false;
 }
 
+void ThreadManager::endRemoteConnectionHandler() {
+	remoteConnectionHandlerRunning = false;
+}
+
 void ThreadManager::endGameDataBroadcasterThread(){
 	 broadcastRunning = false;
+}
+
+void ThreadManager::waitForRemoteConnectionThread() {
+	WaitForSingleObject(hRemoteConnectionHandler, INFINITE);
+	CloseHandle(hBroadcastThread);
 }
 
 void ThreadManager::waitForGameDataBroadcaster() {
