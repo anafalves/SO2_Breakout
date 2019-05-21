@@ -48,6 +48,10 @@ int Server::startServer(tstring fileName) {
 	if (!threadManager.startRemoteConnectionHandler()) {
 		return REMOTE_CONNECTION_HANDLER_ERROR;
 	}
+
+	if (!threadManager.startGameDataBroadcaster()) {
+		return BROADCASTER_STARTUP_ERROR;
+	}
 	//TODO:Launch server threads, comm threads and others.
 
 	//TODO: Create a game thread, that will handle the game and start the ball as the players loose it and what not

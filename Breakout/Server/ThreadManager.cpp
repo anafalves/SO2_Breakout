@@ -37,6 +37,8 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 		Server::gameData.moveActiveBalls();
 		Server::sharedMemory.setUpdate();
+
+		tcout << "a correr" << endl;
 	}
 	tcout << "Ball Thread Ended" << endl;
 	CloseHandle(hTimer);
@@ -183,25 +185,32 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 				if (!Server::clients.hasRoom()) {
 					reply.type = DENY_SERVER_FULL;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE)
+					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE) {
 						ACTIVE = false;
+						break;
+					}
 				}
 				else if (!Server::clients.isNameAvailable(request.message.name)) {
 					reply.type = DENY_USERNAME;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE)
+					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE) {
 						ACTIVE = false;
+						break;
+					}
 				}
 				else {
 					player = Server::gameData.getAvailablePlayer();
-					if (player != nullptr) {
+					if (player == nullptr) {
 						tcout << "Something went wront while trying to get a pointer to an available player while there's still room." << endl;
 						ACTIVE = false;
+						break;
 					}
 
 					// 3 - When received login and login successful, creates a named pipe called GameDataPipe and open it for client connection.
 					//Creates GameData namedpipe
 					pipeName += PipeConstants::GAMEDATA_PIPE_NAME.c_str();
 					pipeName += request.message.name;
+
+					tcout << "opening gamedata pipe to client :" << pipeName << endl;
 
 					hGameDataPipe = CreateNamedPipe(
 						pipeName.c_str(),
@@ -244,6 +253,8 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 						closePipeConnection(hGameDataPipe);
 						break;
 					}
+					tcout << "user ready!" << endl;
+					Server::threadManager.startBallThread();
 
 					break;
 				}
@@ -268,7 +279,7 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 	HANDLE thread = NULL;
 	PipeInfo * clientInfo;
 
-	tstring pipeName(TEXT("\\\\.") + PipeConstants::MESSAGE_PIPE_NAME);
+	tstring pipeName(TEXT("\\\\.\\") + PipeConstants::MESSAGE_PIPE_NAME);
 
 	*CONTINUE = true;
 
@@ -335,8 +346,6 @@ DWORD WINAPI GameDataBroadcast(LPVOID args) {
 	while (*CONTINUE) {
 		WaitForMultipleObjects(2,update,FALSE,INFINITE);
 		Server::clients.broadcastGameData();
-		//TODO: Broadcast gameData to all PIPE clients
-
 	}
 
 	tcout << "Game Broadcast Thread Ended" << endl;
@@ -380,6 +389,19 @@ bool ThreadManager::startBallThread() {
 	}
 
 	hBallThread = CreateThread(nullptr, 0, BallManager, (LPVOID) &ballThreadRunning, 0, nullptr);
+	if (hBallThread == nullptr) {
+		return false;
+	}
+
+	return true;
+}
+
+bool ThreadManager::startGameDataBroadcaster() {
+	if (broadcastRunning) {
+		return false;
+	}
+
+	hBroadcastThread = CreateThread(nullptr, 0, GameDataBroadcast, (LPVOID)&broadcastRunning, 0, nullptr);
 	if (hBallThread == nullptr) {
 		return false;
 	}

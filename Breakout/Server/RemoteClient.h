@@ -12,6 +12,8 @@ public:
 	{
 	}
 
+	void sendUpdate();
+
 	~RemoteClient() {
 		FlushFileBuffers(hPipe);
 		FlushFileBuffers(hPipeGameData);

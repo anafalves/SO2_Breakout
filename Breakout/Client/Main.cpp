@@ -19,6 +19,7 @@ DWORD WINAPI receiveBallUpdates() {
 	return 0;
 }
 
+
 int _tmain(int argc, TCHAR ** argv) {
 
 	if (argc < 2 || argc > 3) {
@@ -30,16 +31,17 @@ int _tmain(int argc, TCHAR ** argv) {
 
 	if(argc == 2){
 		LocalCLient * local = getLocalClientInstance();
+		client = local;
 	}
 	else {
 		RemoteClient * temp = getRemoteClientInstance();
 
-		//temp->connect(argv[2]);
+		temp->connect(argv[2]);
 		
-		/*if (!temp->isConnected()) {
+		if (!temp->isConnected()) {
 			tcout << "couldn't connect to remote server!... quitting" << endl;
 			return 0;
-		}*/
+		}
 
 		client = temp;
 	}
@@ -70,10 +72,10 @@ int _tmain(int argc, TCHAR ** argv) {
 
 	_gettchar();
 	CONTINUE = false;
+	delete client;
 
 	WaitForSingleObject(thread, INFINITE);
 	CloseHandle(alreadyRunning);
-	delete client;
 
 	return 0;
 }

@@ -20,7 +20,7 @@ void ClientManager::AddClient(std::tstring name, Player * p, int &myId) {
 	myId = temp->getId();
 	clients.push_back(temp);
 
-	ReleaseMutex(modify);
+	ReleaseMutex(hClientMutex);
 }
 
 void ClientManager::AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId){

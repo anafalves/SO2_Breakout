@@ -49,6 +49,7 @@ public:
 	bool isLocalClientHandlerRunning() const;
 	bool isRemoteConnectionHandlerRunning() const;
 
+	bool startGameDataBroadcaster();
 	bool startLocalClientHandler();
 	bool startRemoteConnectionHandler();
 	bool startBallThread();

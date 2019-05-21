@@ -41,8 +41,6 @@ bool RemoteClient::connect(TCHAR * ipAddr) {
 		NULL
 	);
 
-	tcout << "connecting to:" << pipeName << endl;
-
 	if (hPipeMessage != INVALID_HANDLE_VALUE) {
 		dwState = PIPE_READMODE_MESSAGE;
 
@@ -52,7 +50,6 @@ bool RemoteClient::connect(TCHAR * ipAddr) {
 			CloseHandle(hPipeMessage);
 			return false;
 		}
-
 		return true;
 	}
 
@@ -100,9 +97,16 @@ bool RemoteClient::connectToGameDataPipe(TCHAR * name) {
 	pipeName += PipeConstants::GAMEDATA_PIPE_NAME.c_str();
 	pipeName += name;
 
+	tcout << "opening pipe:" << pipeName << endl;
+
+	if (!WaitNamedPipe(pipeName.c_str(), 5000)) {
+		return false;
+	}
+
 	hPipeGameData = CreateFile(
 		pipeName.c_str(),
-		GENERIC_READ,
+		GENERIC_READ |
+		GENERIC_WRITE,
 		0,
 		NULL,
 		OPEN_EXISTING,
@@ -120,9 +124,11 @@ bool RemoteClient::connectToGameDataPipe(TCHAR * name) {
 			return false;
 		}
 
+		tcout << "true!" << endl;
 		return true;
 	}
 
+	tcout << "failed to create pipe" << endl;
 	return false;
 }
 
