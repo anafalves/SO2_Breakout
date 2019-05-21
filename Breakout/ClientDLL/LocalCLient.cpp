@@ -28,7 +28,7 @@ GameData LocalCLient::receiveBroadcast() {
 	return (*sharedMemmoryContent.viewGameData);
 }
 
-void LocalCLient::sendMessage(ClientMsg msg)
+bool LocalCLient::sendMessage(ClientMsg msg)
 {
 	WaitForSingleObject(sharedMemmoryContent.hClientSemEmpty, INFINITE);
 	WaitForSingleObject(sharedMemmoryContent.hClientWriteMutex, INFINITE);
@@ -39,6 +39,8 @@ void LocalCLient::sendMessage(ClientMsg msg)
 
 	ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
 	ReleaseMutex(sharedMemmoryContent.hClientWriteMutex);
+
+	return true;
 }
 
 ServerMsg LocalCLient::receiveMessage() {
