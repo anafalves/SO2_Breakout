@@ -23,7 +23,7 @@ GameData LocalCLient::receiveBroadcast() {
 	update[0] = sharedMemmoryContent.hUpdateEvent;
 	update[1] = sharedMemmoryContent.hExitEvent; //TODO: make this verification outside of here, so that the client can quit. or something else
 
-	WaitForMultipleObjects(2, update, false, INFINITE);
+	WaitForMultipleObjects(2, update, FALSE, INFINITE);
 	return (*sharedMemmoryContent.viewGameData);
 }
 
@@ -83,6 +83,7 @@ ServerMsg LocalCLient::receiveMessage() {
 ServerMsg LocalCLient::receiveMessageWithTimeout()
 {
 	ServerMsg msg;
+
 	int timeOut = 3000;
 	DWORD dWaitResult;
 
@@ -94,7 +95,7 @@ ServerMsg LocalCLient::receiveMessageWithTimeout()
 	read[0] = sharedMemmoryContent.hClientReadMutex;
 	read[1] = sharedMemmoryContent.hExitEvent;
 
-	dWaitResult = WaitForMultipleObjects(2, full, FALSE, INFINITE);
+	dWaitResult = WaitForMultipleObjects(2, full, FALSE, timeOut);
 	if (dWaitResult == WAIT_TIMEOUT) {
 		msg.type = TIMEDOUT;
 		return msg;
