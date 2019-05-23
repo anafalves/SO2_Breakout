@@ -30,8 +30,16 @@ GameData LocalCLient::receiveBroadcast() {
 
 bool LocalCLient::sendMessage(ClientMsg msg)
 {
-	WaitForSingleObject(sharedMemmoryContent.hClientSemEmpty, INFINITE);
-	WaitForSingleObject(sharedMemmoryContent.hClientWriteMutex, INFINITE);
+	HANDLE write[2];
+	HANDLE empty[2];
+
+	write[0] = sharedMemmoryContent.hClientSemEmpty;
+	write[1] = sharedMemmoryContent.hExitEvent;
+	empty[0] = sharedMemmoryContent.hClientWriteMutex;
+	empty[1] = sharedMemmoryContent.hExitEvent;
+
+	WaitForMultipleObjects(2, empty, FALSE, INFINITE);
+	WaitForMultipleObjects(2, write, FALSE, INFINITE);
 
 	sharedMemmoryContent.viewClientBuffer->buffer[sharedMemmoryContent.viewClientBuffer->write_pos] = msg;
 	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos + 1;
