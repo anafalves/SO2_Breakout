@@ -21,6 +21,7 @@ public:
 
 	Client() {
 		CONTINUE = true;
+		client_id = -1;
 	}
 	//TODO: add wait functions to end with threads or stuff that may be running using this ( CONTINUE = FALSE)
 	int getClientID() { return client_id; }

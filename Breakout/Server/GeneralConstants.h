@@ -20,6 +20,7 @@ struct SharedMemoryConstants
 	static const tstring EXIT_EVENT;
 
 	static const tstring MUT_CLI_WRITE;
+	static const tstring MUT_CLI_READ;
 };
 
 struct PipeConstants {

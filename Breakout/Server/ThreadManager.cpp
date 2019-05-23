@@ -38,7 +38,6 @@ DWORD WINAPI BallManager(LPVOID args) {
 		Server::gameData.moveActiveBalls();
 		Server::sharedMemory.setUpdate();
 
-		tcout << "a correr" << endl;
 	}
 	tcout << "Ball Thread Ended" << endl;
 	CloseHandle(hTimer);
@@ -85,7 +84,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				}
 				else {
 					player = Server::gameData.getAvailablePlayer();
-					if (player != nullptr) {
+					if (player == nullptr) {
 						tcout << "Something went wront while trying to get a pointer to an available player while there's still room." << endl;
 						ACTIVE = false;
 						reply.type = DENY_SERVER_FULL; //todo: CHANGE THIS
@@ -98,7 +97,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 					reply.type = ACCEPT;
 
 					//TODO: do something about this later!
-					tcout << "Client: " << request.message.name << " -> " << reply.type << endl;
+					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 				}
 
 				Server::sharedMemory.writeMessage(reply);
@@ -402,7 +401,7 @@ bool ThreadManager::startGameDataBroadcaster() {
 	}
 
 	hBroadcastThread = CreateThread(nullptr, 0, GameDataBroadcast, (LPVOID)&broadcastRunning, 0, nullptr);
-	if (hBallThread == nullptr) {
+	if (hBroadcastThread == nullptr) {
 		return false;
 	}
 

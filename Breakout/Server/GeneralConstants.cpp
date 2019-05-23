@@ -13,6 +13,7 @@ const tstring SharedMemoryConstants::EVENT_GAMEDATA_UPDATE = TEXT("EventGamedata
 const tstring SharedMemoryConstants::EXIT_EVENT = TEXT("ExitEventClient");
 
 const tstring SharedMemoryConstants::MUT_CLI_WRITE = TEXT("MutClientWrite");
+const tstring SharedMemoryConstants::MUT_CLI_READ = TEXT("MutClientRead");
 
 //Named pipe constants
 const tstring PipeConstants::MESSAGE_PIPE_NAME = TEXT("pipe\\messages");

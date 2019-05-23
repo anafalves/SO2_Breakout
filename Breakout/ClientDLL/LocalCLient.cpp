@@ -19,19 +19,27 @@ bool LocalCLient::login(TCHAR * name)
 }
 
 GameData LocalCLient::receiveBroadcast() {
-	//HANDLE update[2];
-	//update[0] = sharedMemmoryContent.hUpdateEvent;
-	//update[1] = sharedMemmoryContent.hExitEvent; //TODO: make this verification outside of here, so that the client can quit. or something else
+	HANDLE update[2];
+	update[0] = sharedMemmoryContent.hUpdateEvent;
+	update[1] = sharedMemmoryContent.hExitEvent;
 
-	//WaitForMultipleObjects(2, update, false, INFINITE);
-	WaitForSingleObject(sharedMemmoryContent.hUpdateEvent, INFINITE);
+	WaitForMultipleObjects(2, update, FALSE, INFINITE);
+
 	return (*sharedMemmoryContent.viewGameData);
 }
 
 bool LocalCLient::sendMessage(ClientMsg msg)
 {
-	WaitForSingleObject(sharedMemmoryContent.hClientSemEmpty, INFINITE);
-	WaitForSingleObject(sharedMemmoryContent.hClientWriteMutex, INFINITE);
+	HANDLE write[2];
+	HANDLE empty[2];
+
+	write[0] = sharedMemmoryContent.hClientSemEmpty;
+	write[1] = sharedMemmoryContent.hExitEvent;
+	empty[0] = sharedMemmoryContent.hClientWriteMutex;
+	empty[1] = sharedMemmoryContent.hExitEvent;
+
+	WaitForMultipleObjects(2, empty, FALSE, INFINITE);
+	WaitForMultipleObjects(2, write, FALSE, INFINITE);
 
 	sharedMemmoryContent.viewClientBuffer->buffer[sharedMemmoryContent.viewClientBuffer->write_pos] = msg;
 	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos + 1;
@@ -46,36 +54,69 @@ bool LocalCLient::sendMessage(ClientMsg msg)
 ServerMsg LocalCLient::receiveMessage() {
 	ServerMsg msg;
 
-	WaitForSingleObject(sharedMemmoryContent.hServerSemFilled, INFINITE);
+	HANDLE full[2];
+	HANDLE read[2];
+
+	full[0] = sharedMemmoryContent.hServerSemFilled;
+	full[1] = sharedMemmoryContent.hExitEvent;
+	read[0] = sharedMemmoryContent.hClientReadMutex;
+	read[1] = sharedMemmoryContent.hExitEvent;
+
+	WaitForMultipleObjects(2, full, FALSE, INFINITE);
+	WaitForMultipleObjects(2, read, FALSE, INFINITE);
 
 	msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
-	sharedMemmoryContent.viewServerBuffer->read_pos++;
-	sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
-
-	ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+	if (msg.id == getClientID()) {
+		sharedMemmoryContent.viewServerBuffer->read_pos++;
+		sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+		
+		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+		ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+	}
+	else {
+		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+		ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+	}
 
 	return msg;
 }
 
 ServerMsg LocalCLient::receiveMessageWithTimeout()
 {
-	ServerMsg result;
+	ServerMsg msg;
+
 	int timeOut = 3000;
 	DWORD dWaitResult;
 
-	dWaitResult = WaitForSingleObject(sharedMemmoryContent.hServerSemFilled, timeOut);
+	HANDLE full[2];
+	HANDLE read[2];
+
+	full[0] = sharedMemmoryContent.hServerSemFilled;
+	full[1] = sharedMemmoryContent.hExitEvent;
+
+	read[0] = sharedMemmoryContent.hClientReadMutex;
+	read[1] = sharedMemmoryContent.hExitEvent;
+
+	dWaitResult = WaitForMultipleObjects(2, full, FALSE, timeOut);
 	if (dWaitResult == WAIT_TIMEOUT) {
-		result.type = TIMEDOUT;
-		return result;
+		msg.type = TIMEDOUT;
+		return msg;
 	}
 
-	result = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
-	sharedMemmoryContent.viewServerBuffer->read_pos++;
-	sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+	WaitForMultipleObjects(2, read, FALSE, INFINITE);
 
-	ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+	msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
+	if (msg.id == getClientID()) {
+		sharedMemmoryContent.viewServerBuffer->read_pos++;
+		sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
 
-	return result;
+		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+		ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+	}
+	else {
+		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+		ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+	}
+
+	return msg;
 }
-
-
