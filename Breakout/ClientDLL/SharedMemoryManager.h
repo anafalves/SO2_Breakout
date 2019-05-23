@@ -27,6 +27,7 @@ public:
 	HANDLE hClientSemEmpty;
 	HANDLE hClientSemFilled;
 	HANDLE hClientWriteMutex;
+	HANDLE hClientReadMutex;
 
 	SharedMemoryManager();
 	~SharedMemoryManager();

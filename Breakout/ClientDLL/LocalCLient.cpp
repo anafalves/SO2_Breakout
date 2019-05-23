@@ -54,6 +54,14 @@ bool LocalCLient::sendMessage(ClientMsg msg)
 ServerMsg LocalCLient::receiveMessage() {
 	ServerMsg msg;
 
+	HANDLE read[2];
+	HANDLE full[2];
+
+	write[0] = sharedMemmoryContent.hClientSemFilled;
+	write[1] = sharedMemmoryContent.hExitEvent;
+	empty[0] = sharedMemmoryContent.hClientReadMutex;
+	empty[1] = sharedMemmoryContent.hExitEvent;
+
 	WaitForSingleObject(sharedMemmoryContent.hServerSemFilled, INFINITE);
 
 	msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
