@@ -97,7 +97,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 					reply.type = ACCEPT;
 
 					//TODO: do something about this later!
-					tcout << "Client: " << request.message.name << " -> " << reply.type << endl;
+					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 				}
 
 				Server::sharedMemory.writeMessage(reply);
@@ -401,7 +401,7 @@ bool ThreadManager::startGameDataBroadcaster() {
 	}
 
 	hBroadcastThread = CreateThread(nullptr, 0, GameDataBroadcast, (LPVOID)&broadcastRunning, 0, nullptr);
-	if (hBallThread == nullptr) {
+	if (hBroadcastThread == nullptr) {
 		return false;
 	}
 

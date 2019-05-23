@@ -23,6 +23,7 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hClientBuffer);
 	CloseHandle(hServerBuffer);
 	CloseHandle(hGameData);
+	CloseHandle(hExitEvent);
 }
 
 void SharedMemoryManager::initSharedMemory() {

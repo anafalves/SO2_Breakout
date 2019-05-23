@@ -21,9 +21,10 @@ bool LocalCLient::login(TCHAR * name)
 GameData LocalCLient::receiveBroadcast() {
 	HANDLE update[2];
 	update[0] = sharedMemmoryContent.hUpdateEvent;
-	update[1] = sharedMemmoryContent.hExitEvent; //TODO: make this verification outside of here, so that the client can quit. or something else
+	update[1] = sharedMemmoryContent.hExitEvent;
 
 	WaitForMultipleObjects(2, update, FALSE, INFINITE);
+
 	return (*sharedMemmoryContent.viewGameData);
 }
 
@@ -56,7 +57,7 @@ ServerMsg LocalCLient::receiveMessage() {
 	HANDLE full[2];
 	HANDLE read[2];
 
-	full[0] = sharedMemmoryContent.hClientSemFilled;
+	full[0] = sharedMemmoryContent.hServerSemFilled;
 	full[1] = sharedMemmoryContent.hExitEvent;
 	read[0] = sharedMemmoryContent.hClientReadMutex;
 	read[1] = sharedMemmoryContent.hExitEvent;
@@ -90,8 +91,9 @@ ServerMsg LocalCLient::receiveMessageWithTimeout()
 	HANDLE full[2];
 	HANDLE read[2];
 
-	full[0] = sharedMemmoryContent.hClientSemFilled;
+	full[0] = sharedMemmoryContent.hServerSemFilled;
 	full[1] = sharedMemmoryContent.hExitEvent;
+
 	read[0] = sharedMemmoryContent.hClientReadMutex;
 	read[1] = sharedMemmoryContent.hExitEvent;
 
@@ -118,5 +120,3 @@ ServerMsg LocalCLient::receiveMessageWithTimeout()
 
 	return msg;
 }
-
-

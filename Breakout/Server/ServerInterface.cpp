@@ -165,8 +165,17 @@ void ServerInterface::startServer(tstring filename) {
 			tcout << "Local client handler THREAD could not be started!" << endl;
 			return;
 
+		case REMOTE_CONNECTION_HANDLER_ERROR:
+			tcout << "Remote Connection handler thread could not be started!" << endl;
+			return;
+
+		case BROADCASTER_STARTUP_ERROR:
+			tcout << "Game Broadcaster thread could not be started!" << endl;
+			return;
+
 		default:
 			tcout << "uh oh, something happened and I have no idea of what!" << endl;
+			return;
 	}
 
 	startCommandLine();
