@@ -329,7 +329,7 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 	}
 
 	CONTINUE = false;
-	WaitForMultipleObjects(clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
+	WaitForMultipleObjects((DWORD) clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
 
 	return 0;
 }
