@@ -149,3 +149,12 @@ void SharedMemoryManager::initSyncVariables() {
 		throw TEXT("Error while trying to create ClientReadMutex");
 	}
 }
+
+bool SharedMemoryManager::getUpdateFlag(int id) {
+	tstring updateFlag(TEXT("UpdateFlag_") + id);
+	hReadyForUpdate = OpenEvent(EVENT_ALL_ACCESS, NULL, updateFlag.c_str());
+	if (hReadyForUpdate == INVALID_HANDLE_VALUE)
+		return false;
+
+	return true;
+}

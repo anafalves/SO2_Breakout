@@ -13,6 +13,14 @@ bool LocalCLient::login(TCHAR * name)
 	answer = receiveMessageWithTimeout();
 	if (answer.type == ACCEPT) {
 		setClientID(answer.id);
+		setUpdateId(answer.message.update_id);
+
+		if (sharedMemmoryContent.getUpdateFlag(update_id) == false) {
+			msg.type = LEAVE;
+			sendMessage(msg);
+			return false;
+		}
+
 		return true;
 	}//TODO: return the server answer aproprietly, no server, server full, change name
 	return false;
@@ -20,12 +28,16 @@ bool LocalCLient::login(TCHAR * name)
 
 GameData LocalCLient::receiveBroadcast() {
 	HANDLE update[2];
+	GameData data;
+
 	update[0] = sharedMemmoryContent.hUpdateEvent;
 	update[1] = sharedMemmoryContent.hExitEvent;
 
 	WaitForMultipleObjects(2, update, FALSE, INFINITE);
-
-	return (*sharedMemmoryContent.viewGameData);
+	data = (*sharedMemmoryContent.viewGameData);
+	SetEvent(sharedMemmoryContent.hReadyForUpdate);
+	
+	return data;
 }
 
 bool LocalCLient::sendMessage(ClientMsg msg)
@@ -119,4 +131,12 @@ ServerMsg LocalCLient::receiveMessageWithTimeout()
 	}
 
 	return msg;
+}
+
+void LocalCLient::setUpdateId(int id) {
+	update_id = id;
+}
+
+int LocalCLient::getUpdateId() const {
+	return update_id;
 }
