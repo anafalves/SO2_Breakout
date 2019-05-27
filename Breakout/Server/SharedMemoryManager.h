@@ -1,12 +1,18 @@
 #pragma once
 #include <Windows.h>
+#include <vector>
 #include "Messages.h"
 #include "GeneralConstants.h"
 #include "GameData.h"
+#include "Spectator.h"
 
 class SharedMemoryManager
 {
 private:
+	int updateCounter;
+	vector<Spectator *> spectators;
+	vector<HANDLE> updateFlags;
+
 	HANDLE hGameData;
 	HANDLE hServerBuffer;
 	HANDLE hClientBuffer;
@@ -30,15 +36,12 @@ public:
 	int initSharedMemory();
 	ClientMsg readMessage();
 	void writeMessage(ServerMsg message);
+	void setUpdate();
+	GameData * getGameData() const;
 
-	void setUpdate() {
-		SetEvent(hUpdateEvent);
-		ResetEvent(hUpdateEvent);
-	}
-
-	GameData * getGameData() const {
-		return viewGameData;
-	};
+	int addClientUpdateFlag();
+	void removeClientUpdateFlag(int id);
+	void waitForUpdateFlags() const;
 
 	SharedMemoryManager();
 	~SharedMemoryManager();
