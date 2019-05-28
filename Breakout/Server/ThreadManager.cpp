@@ -87,13 +87,19 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 					if (player == nullptr) {
 						tcout << "Something went wront while trying to get a pointer to an available player while there's still room." << endl;
 						ACTIVE = false;
-						reply.type = DENY_SERVER_FULL; //todo: CHANGE THIS
+						reply.type = DENY_SERVER_FULL;
 						Server::sharedMemory.writeMessage(reply);
 						break;
 					}
+
+					reply.message.update_id = Server::sharedMemory.addClientUpdateFlag(); //Creats a handle to sync server write and local clirne read operations
+					if (reply.message.update_id < 0) {
+						reply.type = DENY_SERVER_FULL;
+						Server::sharedMemory.writeMessage(reply);
+						break;
+					}
+
 					Server::clients.AddClient(request.message.name, player, reply.id);
-					
-					Server::threadManager.startBallThread(); //TODO: Remove this later
 					reply.type = ACCEPT;
 
 					//TODO: do something about this later!
@@ -103,7 +109,23 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				Server::sharedMemory.writeMessage(reply);
 				break;
 
+			case SPECTATOR:
+			{
+				int id = Server::sharedMemory.addClientUpdateFlag();
+				if (id < 0)
+				{
+					reply.type = DENY_SPECTATOR;
+				}
+				else {
+					reply.type = SPECTATOR;
+					reply.message.update_id = id;
+				}
+				Server::sharedMemory.writeMessage(reply);
+
+				break;
+			}
 			case LEAVE:
+				request.message.basicMove;
 				ACTIVE = false;
 				break;
 		}//End of switch
@@ -344,6 +366,8 @@ DWORD WINAPI GameDataBroadcast(LPVOID args) {
 
 	while (*CONTINUE) {
 		WaitForMultipleObjects(2,update,FALSE,INFINITE);
+		Server::sharedMemory.waitForUpdateFlags();
+
 		Server::clients.broadcastGameData();
 	}
 

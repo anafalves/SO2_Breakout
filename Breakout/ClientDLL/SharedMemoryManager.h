@@ -19,6 +19,8 @@ public:
 	ClientMsgBuffer * viewClientBuffer;
 	ServerMsgBuffer * viewServerBuffer;
 
+	HANDLE hReadyForUpdate;
+
 	HANDLE hUpdateEvent;
 	HANDLE hExitEvent;
 	HANDLE hServerSemEmpty;
@@ -29,6 +31,7 @@ public:
 	HANDLE hClientWriteMutex;
 	HANDLE hClientReadMutex;
 
+	bool getUpdateFlag(int id);
 	SharedMemoryManager();
 	~SharedMemoryManager();
 };
