@@ -44,6 +44,7 @@ typedef union {
 	TCHAR name[MAX_NAME_LENGHT];
 	PreciseMove preciseMove;
 	int basicMove;
+	int update_id;
 }ClientRequest;
 
 typedef struct{

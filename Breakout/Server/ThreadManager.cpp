@@ -125,7 +125,8 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				break;
 			}
 			case LEAVE:
-				request.message.basicMove;
+				Server::sharedMemory.removeClientUpdateFlag(request.message.update_id);
+				Server::sharedMemory.writeMessage(reply);
 				ACTIVE = false;
 				break;
 		}//End of switch
@@ -366,8 +367,6 @@ DWORD WINAPI GameDataBroadcast(LPVOID args) {
 
 	while (*CONTINUE) {
 		WaitForMultipleObjects(2,update,FALSE,INFINITE);
-		Server::sharedMemory.waitForUpdateFlags();
-
 		Server::clients.broadcastGameData();
 	}
 
