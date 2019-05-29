@@ -262,22 +262,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 						break;
 					}
 
-					clientConnected = ConnectNamedPipe(hGameDataPipe, NULL);
-					if (clientConnected || (GetLastError() == ERROR_PIPE_CONNECTED))
-						clientConnected = true;
-
-					if (clientConnected) {
-						// 4 - After connectiing the thread creates and adds the user to the active users pool.
-						Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
-					}
-					else {
-						tcout << "client couldn't connect to GameDataPipe!" << endl;
-						closePipeConnection(hGameDataPipe);
-						break;
-					}
-					tcout << "user ready!" << endl;
-					Server::threadManager.startBallThread();
-
+					Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
 					break;
 				}
 			} //End of Login case
