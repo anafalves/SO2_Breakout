@@ -1,19 +1,22 @@
 #include "ThreadManager.h"
 #include "Server.h"
-
-enum TimeConversions {
-	MILLISECOND = 1000 * 10,
-};
+#include "GameDataManager.h"
 
 DWORD WINAPI BallManager(LPVOID args) {
 	HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
-	bool * CONTINUE = (bool *)args;
-	int time;
+	GameData * gameData;
 
-	liDueTime.QuadPart = 100LL;
+	int ballLeft, ballRight, ballTop, ballBottom;
+	int tileLeft, tileRight, tileTop, tileBottom;
+	int playerLeft, playerRight, playerTop, playerBottom;
+
+	bool ballAvailable;
+	bool * CONTINUE = (bool *)args;
+
 	*CONTINUE = true;
-	time = Server::config.getMovementSpeed() * SPEEDFACTOR;
+	gameData = Server::gameData.getGameData();
+	liDueTime.QuadPart = 100LL;
 
 	// Create an unnamed waitable timer.
 	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
@@ -26,7 +29,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 	Server::gameData.setupGameStart();
 	//TODO: sperar pelo sem�foro / mutex de inicio do jogo para poder avan�ar
 
-	if (!SetWaitableTimer(hTimer, &liDueTime, time, NULL, NULL, 0)) {
+	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
 		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
 		return -1;
 	}
@@ -34,17 +37,250 @@ DWORD WINAPI BallManager(LPVOID args) {
 	while (*CONTINUE)
 	{
 		WaitForSingleObject(hTimer, INFINITE);
+		Server::gameData.lockAccessGameData();
+		Server::sharedMemory.waitForUpdateFlags();
 
-		Server::gameData.moveActiveBalls();
+		for (auto &ball : gameData->balls) {
+			if (!ball.active) {
+				continue;
+			}
+
+			if (ball.up) {
+				ball.posY++;
+			}
+			else {
+				ball.posY--;
+			}
+
+			if (ball.right) {
+				ball.posX++;
+			}
+			else {
+				ball.posX--;
+			}
+
+			//TODO: verify if the Y it's in the tile zone before doing this
+			ballLeft = ball.posX;
+			ballRight = ball.posX + ball.width;
+			ballTop = ball.posY;
+			ballBottom = ball.posY + ball.height;
+
+			for (auto &tile : gameData->tiles) {
+				if (!tile.active) {
+					continue;
+				}
+
+				tileLeft = tile.posX;
+				tileRight = tile.posX + tile.width;
+				tileTop = tile.posY;
+				tileBottom = tile.posY + tile.height;
+
+				//if ball hits right or left of a tile
+				if ((ballLeft < tileRight && tileRight < ballRight) ||
+					(ballLeft < tileLeft && tileLeft < ballRight) &&
+					(tileTop <= ballTop || tileBottom >= ballBottom))
+				{
+					ball.right = !ball.right;
+
+					if (--tile.resistance == 0)
+						tile.active = false;
+
+					//TODO: placeholder
+					gameData->players[ball.playerId].points += 10;
+
+					if (tile.bonus)
+					{
+						//TODO: create thread to generate and handle that thing
+					}
+				}
+
+				//if ball hits top or bottom of a tile
+				if ((ballTop < tileTop && tileTop < ballBottom) ||
+					(ballTop < tileBottom && tileBottom < ballBottom) &&
+					(tileLeft <= ballLeft || tileRight >= ballRight))
+				{
+					ball.up = !ball.up;
+
+					if (--tile.resistance == 0)
+						tile.active = false;
+
+					//TODO: placeholder
+					gameData->players[ball.playerId].points += 10;
+
+					if (tile.bonus)
+					{
+						//TODO: create thread to generate and handle that thing
+					}
+				}
+			}
+
+			for (auto &player : gameData->players) {
+				if (!player.active) {
+					continue;
+				}
+
+				playerLeft = player.posX;
+				playerRight = player.posX + player.width;
+				playerTop = player.posY;
+				playerBottom = player.posY + player.height;
+
+				//ball hit player on top
+				if ((ballTop < playerTop && playerTop < ballBottom) &&
+					(playerLeft <= ballLeft || playerLeft <= ballRight))
+				{
+					ball.up = !ball.up;
+					ball.playerId = player.id;
+				}
+
+				if ((ballLeft < playerRight && playerRight < ballRight) ||
+					(ballLeft < playerLeft && playerLeft < ballRight) &&
+					(playerTop <= ballTop || playerBottom >= ballBottom))
+				{
+					ball.up = !ball.up;
+					ball.right = !ball.right;
+					ball.playerId = player.id;
+				}
+			}
+
+			//Verify if ball is in one of the of the limits, so it can change position
+			if (ball.posX == MAX_WIDTH || ball.posX == MIN_WIDTH) {
+				ball.right = !ball.right;
+			}
+
+			if (ball.posY == MAX_HEIGHT) {
+				ball.up = !ball.up;
+			}
+
+			if (ball.posY == MIN_HEIGHT) {
+				ball.active = false;
+				gameData->players[ball.playerId].lives--;
+			}
+		}
+
+		//Verify if there are still balls in the game
+		ballAvailable = false;
+
+		for (auto & ball : gameData->balls) {
+			if (ball.active)
+				ballAvailable = true;
+		}
+
+		if (!ballAvailable) {
+			for (auto & player : gameData->players) {
+				if (player.active) {
+					if (player.lives > 0) {
+						Server::gameData.setupBall();
+						ballAvailable = true;
+						break;
+					}
+				}
+			}
+		}
+
 		Server::sharedMemory.setUpdate();
+		Server::gameData.releaseAccessGameData();
 
+		if (!ballAvailable) {
+			gameData->gameState = GAME_OVER;
+			break;
+		}
 	}
+
 	tcout << "Ball Thread Ended" << endl;
 	CloseHandle(hTimer);
 
 	return 0;
 }
 
+
+DWORD WINAPI BonusHandler(LPVOID args) {
+	GameData * gameData = Server::gameData.getGameData();
+	Bonus * bonus = nullptr;
+	HANDLE hTimer = NULL;
+	LARGE_INTEGER liDueTime;
+	Tile * tile = (Tile*) args;
+	int nextPos;
+
+	liDueTime.QuadPart = 100LL;
+
+	// Create an unnamed waitable timer.
+	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+	if (NULL == hTimer)
+	{
+		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
+		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	Server::gameData.lockAccessGameData();
+	Server::sharedMemory.waitForUpdateFlags();
+
+	for (auto & b : gameData->bonuses) {
+		if (!b.active) {
+			b.active = true;
+			bonus->type = tile->bonus;
+			bonus = &b;
+			break;
+		}
+	}
+	Server::sharedMemory.setUpdate();
+	Server::gameData.releaseAccessGameData();
+
+	if (bonus == nullptr)
+		return 1;
+
+	while (bonus->active) {
+		WaitForSingleObject(hTimer, INFINITE);
+		nextPos = bonus->posY + Server::config.getMovementSpeed();
+
+		Server::gameData.lockAccessGameData();
+		Server::sharedMemory.waitForUpdateFlags();
+
+		for (auto & player : gameData->players) {
+			if (!player.active)
+				continue;
+
+			if (bonus->posY + bonus->height >= player.posY &&
+				bonus->posY <= player.posY + player.height &&
+				bonus->posX >= player.posX + player.width  &&
+				bonus->posX + bonus->width <= player.posX)
+			{
+				switch (bonus->type) {
+					case LIFE:
+						player.lives++;
+						break;
+
+					case TRIPLE:
+						gameData->balls[1] = gameData->balls[2] = gameData->balls[0];
+						gameData->balls[1].right = !gameData->balls[1].right;
+						gameData->balls[2].up = !gameData->balls[2].up;
+						break;
+
+					case SPEED_UP:
+						Server::config.setMovementSpeed(Server::config.getMovementSpeed() + 5);
+						break;
+
+					case SLOW_DOWN:
+						Server::config.setMovementSpeed(Server::config.getMovementSpeed() - 2);
+						break;
+				}
+
+				bonus->active = false;
+				Server::gameData.releaseAccessGameData();
+				Server::sharedMemory.setUpdate();
+				return 0;
+			}
+		}
+		Server::sharedMemory.setUpdate();
+		Server::gameData.releaseAccessGameData();
+	}
+
+	return 0;
+}
 
 DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	bool * CONTINUE = (bool *)args;
@@ -107,6 +343,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				}
 
 				Server::sharedMemory.writeMessage(reply);
+				Server::threadManager.startBallThread();
 				break;
 
 			case SPECTATOR:
@@ -127,7 +364,8 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 			case LEAVE:
 				Server::sharedMemory.removeClientUpdateFlag(request.message.update_id);
 				Server::sharedMemory.writeMessage(reply);
-				ACTIVE = false;
+				Server::clients.removeClient(request.id);
+				//ACTIVE = false;
 				break;
 		}//End of switch
 	}//End of while
@@ -274,7 +512,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 		}
 	}
 	// 5 - Once the user leaves, crashes or pipe closes/error, the thread removes the user from the pool.
-	Server::clients.removeClient(request.id);
+	Server::clients.removeClient(reply.id);
 
 	return 0;
 }
