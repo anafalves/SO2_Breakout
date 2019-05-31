@@ -20,7 +20,6 @@ bool LocalCLient::login(TCHAR * name)
 			sendMessage(msg);
 			return false;
 		}
-		SetEvent(sharedMemmoryContent.hReadyForUpdate);
 
 		return true;
 	}//TODO: return the server answer aproprietly, no server, server full, change name
@@ -34,6 +33,7 @@ GameData LocalCLient::receiveBroadcast() {
 	update[0] = sharedMemmoryContent.hUpdateEvent;
 	update[1] = sharedMemmoryContent.hExitEvent;
 
+	SetEvent(sharedMemmoryContent.hReadyForUpdate);
 	WaitForMultipleObjects(2, update, FALSE, INFINITE);
 	data = (*sharedMemmoryContent.viewGameData);
 	SetEvent(sharedMemmoryContent.hReadyForUpdate);
