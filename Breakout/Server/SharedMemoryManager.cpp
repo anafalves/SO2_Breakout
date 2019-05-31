@@ -56,7 +56,7 @@ void SharedMemoryManager::removeClientUpdateFlag(HANDLE flag) {
 	}
 }
 
-void SharedMemoryManager::waitForUpdateFlags() const {
+void SharedMemoryManager::waitForUpdateFlags(){
 	WaitForMultipleObjects(updateFlags.size(), updateFlags.data(), TRUE, INFINITE);
 }
 

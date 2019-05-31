@@ -35,14 +35,9 @@ enum MessageConstants {
 };
 
 //Pipe and Local Client -> Server messages
-typedef struct {
-	int x;
-	int y;
-}PreciseMove;
-
 typedef union {
 	TCHAR name[MAX_NAME_LENGHT];
-	PreciseMove preciseMove;
+	int preciseMove;
 	int basicMove;
 	int update_id;
 }ClientRequest;

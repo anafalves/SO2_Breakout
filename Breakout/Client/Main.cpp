@@ -56,19 +56,15 @@ int _tmain(int argc, TCHAR ** argv) {
 		return -1;
 	}
 
-	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		tcout << "A client is already running in this computer!" << endl;
+
+	//TODO: create a class to start this up
+
+	if (client->login(argv[1])) {
+		tcout << "login accepted" << endl;
 		thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)receiveBallUpdates, NULL, 0, NULL);
 	}
-	else 
-	{
-		//TODO: create a class to start this up
-
-		if (client->login(argv[1])) {
-			tcout << "login accepted" << endl;
-			thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)receiveBallUpdates, NULL, 0, NULL);
-		}
-	}
+	else
+		tcout << "login unaccepted" << endl;
 
 	_gettchar();
 	CONTINUE = false;

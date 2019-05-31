@@ -40,7 +40,7 @@ public:
 
 	int addClientUpdateFlag(HANDLE & flag);
 	void removeClientUpdateFlag(HANDLE flag);
-	void waitForUpdateFlags() const;
+	void waitForUpdateFlags();
 
 	SharedMemoryManager();
 	~SharedMemoryManager();
