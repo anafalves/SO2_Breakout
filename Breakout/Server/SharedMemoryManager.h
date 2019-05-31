@@ -10,7 +10,6 @@ class SharedMemoryManager
 {
 private:
 	int updateCounter;
-	vector<Spectator *> spectators;
 	vector<HANDLE> updateFlags;
 
 	HANDLE hGameData;
@@ -39,8 +38,8 @@ public:
 	void setUpdate();
 	GameData * getGameData() const;
 
-	int addClientUpdateFlag();
-	void removeClientUpdateFlag(int id);
+	int addClientUpdateFlag(HANDLE & flag);
+	void removeClientUpdateFlag(HANDLE flag);
 	void waitForUpdateFlags() const;
 
 	SharedMemoryManager();

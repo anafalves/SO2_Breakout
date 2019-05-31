@@ -288,6 +288,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	Player * player = nullptr;
 	ClientMsg request;
 	ServerMsg reply;
+	HANDLE flag;
 
 	*CONTINUE = true;
 	
@@ -328,17 +329,18 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 						break;
 					}
 
-					reply.message.update_id = Server::sharedMemory.addClientUpdateFlag(); //Creats a handle to sync server write and local clirne read operations
-					if (reply.message.update_id < 0) {
+					reply.update_id = Server::sharedMemory.addClientUpdateFlag(flag); //Creats a handle to sync server write and local clirne read operations
+					if (reply.update_id < 0) {
 						reply.type = DENY_SERVER_FULL;
 						Server::sharedMemory.writeMessage(reply);
 						break;
 					}
 
-					Server::clients.AddClient(request.message.name, player, reply.id);
+					Server::clients.AddClient(request.message.name, player, flag, reply.id);
+					
 					reply.type = ACCEPT;
+					_tcscpy_s(reply.message.receiver, request.message.name);
 
-					//TODO: do something about this later!
 					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 				}
 
@@ -346,26 +348,9 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				Server::threadManager.startBallThread();
 				break;
 
-			case SPECTATOR:
-			{
-				int id = Server::sharedMemory.addClientUpdateFlag();
-				if (id < 0)
-				{
-					reply.type = DENY_SPECTATOR;
-				}
-				else {
-					reply.type = SPECTATOR;
-					reply.message.update_id = id;
-				}
-				Server::sharedMemory.writeMessage(reply);
-
-				break;
-			}
 			case LEAVE:
-				Server::sharedMemory.removeClientUpdateFlag(request.message.update_id);
 				Server::sharedMemory.writeMessage(reply);
 				Server::clients.removeClient(request.id);
-				//ACTIVE = false;
 				break;
 		}//End of switch
 	}//End of while

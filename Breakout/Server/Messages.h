@@ -58,13 +58,13 @@ typedef struct{
 typedef union{
 	TCHAR receiver[MAX_NAME_LENGHT]; // for the login instance
 	Top10 top10;
-	int update_id;
 	GameData gameData; //TODO: This may be divided by parts, so only the necessary parts are sent to the client, if it is too slow.
 }ServerResponse;
 
 typedef struct {
 	int type;
 	int id;
+	int update_id;
 	ServerResponse message;
 }ServerMsg;
 //end

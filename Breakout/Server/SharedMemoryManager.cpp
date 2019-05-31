@@ -23,10 +23,6 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hServerBuffer);
 	CloseHandle(hGameData);
 
-	for (auto &spectator : spectators) {
-		delete spectator;
-	}
-
 	for (auto &handle: updateFlags) {
 		CloseHandle(handle);
 	}
@@ -37,39 +33,31 @@ void SharedMemoryManager::setUpdate() {
 	ResetEvent(hUpdateEvent);
 }
 
-int SharedMemoryManager::addClientUpdateFlag() {
+int SharedMemoryManager::addClientUpdateFlag(HANDLE & flag) {
 	tstring mystr(TEXT("UpdateFlag_") + updateCounter);
 	
-	HANDLE flag = CreateEvent(NULL, FALSE, FALSE, mystr.c_str());
+	flag = CreateEvent(NULL, FALSE, FALSE, mystr.c_str());
 	if (flag == INVALID_HANDLE_VALUE) {
 		return -1;
 	}
 
-	spectators.push_back(new Spectator(updateCounter,flag));
 	updateFlags.push_back(flag);
 	updateCounter++;
 
 	return updateCounter - 1;
 }
 
-void SharedMemoryManager::removeClientUpdateFlag(int flag) {
-	for (size_t i = 0; i < spectators.size(); i++) {
-		if (flag == spectators[i]->getId()) {
-
-			for (size_t j = 0; j < updateFlags.size(); j++) {
-				if (updateFlags[j] == spectators[i]->getFlag()) {
-					updateFlags.erase(updateFlags.begin() + j);
-				}
-			}
-
-			delete spectators[i];
-			spectators.erase(spectators.begin() + i);
+void SharedMemoryManager::removeClientUpdateFlag(HANDLE flag) {
+	for (size_t i = 0; i < updateFlags.size(); i++) {
+		if (updateFlags[i] == flag) {
+			updateFlags.erase(updateFlags.begin() + i);
+			break;
 		}
 	}
 }
 
 void SharedMemoryManager::waitForUpdateFlags() const {
-	WaitForMultipleObjects(updateFlags.size(), updateFlags.data(), TRUE, 100);
+	WaitForMultipleObjects(updateFlags.size(), updateFlags.data(), TRUE, INFINITE);
 }
 
 GameData * SharedMemoryManager::getGameData() const {
