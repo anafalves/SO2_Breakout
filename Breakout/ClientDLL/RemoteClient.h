@@ -22,6 +22,5 @@ public:
 	GameData receiveBroadcast();
 	bool sendMessage(ClientMsg message);
 	ServerMsg receiveMessage();
-	ServerMsg receiveMessageWithTimeout();
 	~RemoteClient();
 };

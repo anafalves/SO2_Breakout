@@ -86,8 +86,6 @@ ServerMsg RemoteClient::receiveMessage() {
 	return response;
 }
 
-ServerMsg RemoteClient::receiveMessageWithTimeout() { return ServerMsg(); } //TODO: Remote this function from base class
-
 bool RemoteClient::connectToGameDataPipe(TCHAR * name) {
 	bool success = false;
 	DWORD dwState = 0;

@@ -9,6 +9,7 @@ private:
 	SharedMemoryManager sharedMemmoryContent;
 	int update_id;
 
+	ServerMsg receiveMessageLogin(tstring name);
 public:
 	LocalCLient()
 	:Client()
@@ -20,7 +21,6 @@ public:
 	GameData receiveBroadcast();
 	bool sendMessage(ClientMsg msg);
 	ServerMsg receiveMessage();
-	ServerMsg receiveMessageWithTimeout();
 
 	void setUpdateId(int id);
 	int getUpdateId() const;

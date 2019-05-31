@@ -31,5 +31,4 @@ public:
 	virtual GameData receiveBroadcast() = 0;
 	virtual bool sendMessage(ClientMsg message) = 0;
 	virtual ServerMsg receiveMessage() = 0;
-	virtual ServerMsg receiveMessageWithTimeout() = 0;
 };
