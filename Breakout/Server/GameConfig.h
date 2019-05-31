@@ -22,6 +22,7 @@ enum GameConfigDefaults {
 
 class GameConfig {
 private:
+	int initialMovementSpeed;
 	int maxPlayerCount;
 	int levelCount;
 	int speedUpCount;

@@ -1,10 +1,11 @@
 #include "GameConfig.h"
 
 GameConfig::GameConfig() 
-	:maxPlayerCount(DEFAULT_PLAYER_COUNT), levelCount(DEFAULT_LEVEL_COUNT),
-	speedUpCount(DEFAULT_SPEEDUP_COUNT), slowDownCount(DEFAULT_SLOWDOWN_COUNT),
-	initialLives(DEFAULT_LIVES_COUNT), initialTileCount(DEFAULT_TILE_COUNT),
-	movementSpeed(DEFAULT_MOVEMENT_SPEED), bonusDropRate(DEFAULT_BONUS_RATE / 100.0)
+	:initialMovementSpeed(-1), maxPlayerCount(DEFAULT_PLAYER_COUNT), 
+	levelCount(DEFAULT_LEVEL_COUNT), speedUpCount(DEFAULT_SPEEDUP_COUNT), 
+	slowDownCount(DEFAULT_SLOWDOWN_COUNT), initialLives(DEFAULT_LIVES_COUNT), 
+	initialTileCount(DEFAULT_TILE_COUNT), movementSpeed(DEFAULT_MOVEMENT_SPEED), 
+	bonusDropRate(DEFAULT_BONUS_RATE / 100.0)
 {}
 
 //Getters
@@ -78,7 +79,13 @@ bool GameConfig::setMovementSpeed(int speed) {
 	if (speed <= 0)
 		return false;
 
-	movementSpeed = speed;
+	if (initialMovementSpeed < 0) {
+		initialMovementSpeed = speed;
+	}
+
+	if(initialMovementSpeed / speed > initialMovementSpeed * 0.1)
+		movementSpeed = speed;
+	
 	return true;
 }
 
