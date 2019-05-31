@@ -3,10 +3,22 @@
 #include <tchar.h>
 #include "resource.h"
 
+#define WIND_WIDTH 1200
+#define WIND_HEIGHT 1200
+#define Game_WIDTH 800
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 
 TCHAR szProgName[] = TEXT("Base");
+
+TCHAR staticTxtForMainWindow[4][50] = {
+			TEXT("Jogadores ativos: "),
+			TEXT("Vida: "),
+			TEXT("Pontos: ")
+};
+
+int staticTxtMainWindPos[4][2] = {{100,100},{100,700},{100,750}};
+
 
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR lpCmdLine, int nCmdShow) {
 	HWND hWnd; 
@@ -21,7 +33,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR lpCmdLine, int
 	wcApp.style = CS_HREDRAW | CS_VREDRAW;
 	wcApp.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON4));
 	wcApp.hIconSm = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON3));
-	wcApp.hCursor = LoadCursor(hInst, MAKEINTRESOURCE(IDC_ARROW));
+	wcApp.hCursor = LoadCursor(NULL, IDC_CROSS);
 	wcApp.lpszMenuName = MAKEINTRESOURCE(IDR_MENU2); 
 	wcApp.cbClsExtra = 0; 
 	wcApp.cbWndExtra = 0; 
@@ -36,8 +48,8 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR lpCmdLine, int
 		WS_OVERLAPPEDWINDOW, 
 		CW_USEDEFAULT, 
 		CW_USEDEFAULT, 
-		800, 
-		600, 
+		WIND_WIDTH, 
+		WIND_HEIGHT, 
 		(HWND)HWND_DESKTOP, 
 		(HMENU)NULL,
 		(HINSTANCE)hInst, 
@@ -112,11 +124,22 @@ BOOL CALLBACK FuncaoCaixa2(HWND hWnd, UINT messg,
 	return FALSE;
 }
 
+void AddWindowInfo(HWND hWnd, HDC memdcData) {
+	SetBkMode(memdcData, TRANSPARENT);
+	for (int i = 0; i < 4; i++) {
+		TextOut(memdcData, staticTxtMainWindPos[i][0], staticTxtMainWindPos[i][1], staticTxtForMainWindow[i], _tcslen(staticTxtForMainWindow[i]));
+	}
+
+	InvalidateRect(hWnd, NULL, true);
+}
+
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg,
 	WPARAM wParam, LPARAM lParam) {
 	HDC hdc; static TCHAR c;
-	static HDC memdc;
-	HBITMAP hbitmap1;
+	static HDC memdcGame;
+	static HDC memdcData;
+	HBITMAP hbitmapGame;
+	HBITMAP hbitmapData;
 	static int x = 10, y = 10, xi = 0, yi = 0, xf = 0, yf = 0;
 	PAINTSTRUCT ps;
 	switch (messg) {
@@ -136,16 +159,15 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg,
 		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		BitBlt(hdc, 0, 0, 800, 600, memdc, 0, 0, SRCCOPY);
+		//BitBlt(hdc, 0, 0, Game_WIDTH,WIND_HEIGHT, memdcGame, 0, 0, SRCCOPY);
+		BitBlt(hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0,0, SRCCOPY);
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_LBUTTONDOWN:
 		x = LOWORD(lParam);
 		y = HIWORD(lParam);
-		hdc = GetDC(hWnd);
-		TextOut(hdc, x, y, &c, 1);
-		TextOut(memdc, x, y, &c, 1);
-		ReleaseDC(hWnd, hdc);
+		TextOut(memdcGame, x, y, &c, 1);
+		InvalidateRect(hWnd, NULL, true);
 		break;
 	case WM_MBUTTONDOWN:
 		xi = LOWORD(lParam);
@@ -156,22 +178,24 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg,
 		yf = HIWORD(lParam);
 		hdc = GetDC(hWnd);
 		Rectangle(hdc, xi, yi, xf, yf);
-		Rectangle(memdc, xi, yi, xf, yf);
+		Rectangle(memdcGame, xi, yi, xf, yf);
 		ReleaseDC(hWnd, hdc);
 		break;
 	case WM_RBUTTONDOWN:
-		hdc = GetDC(hWnd);
+		AddWindowInfo(hWnd, memdcData);
+		InvalidateRect(hWnd, NULL, true);
+		/*hdc = GetDC(hWnd);
 		Ellipse(hdc, LOWORD(lParam), HIWORD(lParam),
 			LOWORD(lParam) + 100, HIWORD(lParam) + 100);
-		Ellipse(memdc, LOWORD(lParam), HIWORD(lParam),
+		Ellipse(memdcGame, LOWORD(lParam), HIWORD(lParam),
 			LOWORD(lParam) + 100, HIWORD(lParam) + 100);
-		ReleaseDC(hWnd, hdc);
+		ReleaseDC(hWnd, hdc);*/
 		break;
 	case WM_CHAR:
 		c = wParam;
 		hdc = GetDC(hWnd);
 		TextOut(hdc, x, y, &c, 1);
-		TextOut(memdc, x, y, &c, 1);
+		TextOut(memdcGame, x, y, &c, 1);
 		ReleaseDC(hWnd, hdc);
 		break;
 	case WM_KEYDOWN:
@@ -179,22 +203,31 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg,
 			x += 10;
 			hdc = GetDC(hWnd);
 			TextOut(hdc, x, y, &c, 1);
-			TextOut(memdc, x, y, &c, 1);
+			TextOut(memdcGame, x, y, &c, 1);
 			ReleaseDC(hWnd, hdc);
 		}
 		break;
 	case WM_CREATE:
 		hdc = GetDC(hWnd);
-		memdc = CreateCompatibleDC(hdc);
-		hbitmap1 = CreateCompatibleBitmap(hdc, 800, 600);
-		SelectObject(memdc, hbitmap1);
-		SelectObject(memdc, GetStockObject(WHITE_BRUSH));
-		PatBlt(memdc, 0, 0, 800, 600, PATCOPY);
+		memdcGame = CreateCompatibleDC(hdc);
+		memdcData = CreateCompatibleDC(hdc);
+		hbitmapGame = CreateCompatibleBitmap(hdc, Game_WIDTH, WIND_HEIGHT);
+		hbitmapData = CreateCompatibleBitmap(hdc, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT);
+		SelectObject(memdcGame, hbitmapGame);
+		SelectObject(memdcData, hbitmapData);
+		SelectObject(memdcGame, GetStockObject(WHITE_BRUSH));
+		SelectObject(memdcData, GetStockObject(GRAY_BRUSH));
+		PatBlt(memdcGame, 0, 0, Game_WIDTH, WIND_HEIGHT, PATCOPY);
+		PatBlt(memdcData, 0, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, PATCOPY);
+		
+
 		ReleaseDC(hWnd, hdc);
 		DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_LOGIN), hWnd, (DLGPROC)FuncaoCaixa1);
+		
 	default:
 		return DefWindowProc(hWnd, messg, wParam, lParam);
 		break;
 	}
 	return(0);
 }
+
