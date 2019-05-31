@@ -5,12 +5,15 @@
 class LocalClient : public Client
 {
 private:
+	HANDLE updateFlag;
 
 public:
-	LocalClient(std::tstring username, Player * p)
-		:Client(username, p)
+	LocalClient(std::tstring username, HANDLE flag, Player * p)
+		:Client(username, p), updateFlag(flag)
 	{
 	}
+
+	const HANDLE getFlag() const;
 
 	~LocalClient();
 };

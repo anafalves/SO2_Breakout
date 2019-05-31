@@ -8,7 +8,11 @@ ClientManager::ClientManager() {
 	}
 }
 
-void ClientManager::AddClient(std::tstring name, Player * p, int &myId) {
+const vector<Client *> ClientManager::getClientArray() const {
+	return clients;
+}
+
+void ClientManager::AddClient(std::tstring name, Player * p, HANDLE flag, int &myId) {
 	HANDLE modify[2];
 
 	modify[0] = hClientMutex;
@@ -16,7 +20,7 @@ void ClientManager::AddClient(std::tstring name, Player * p, int &myId) {
 
 	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
 
-	LocalClient * temp = new LocalClient(name, p);
+	LocalClient * temp = new LocalClient(name, flag, p);
 	myId = temp->getId();
 	clients.push_back(temp);
 
@@ -131,7 +135,7 @@ bool ClientManager::hasRoom() const {
 tstring ClientManager::getClientsAsString() const{
 	tstringstream tss;
 
-	tss << TEXT("Listing [ ") << clients.size() << TEXT(" ] client(s): ") << endl;
+	tss << TEXT(" - Listing [ ") << clients.size() << TEXT(" ] client(s): ") << endl;
 	tss << TEXT("id :: name :: status") << endl << endl;
 	for (const auto &client : clients) {
 		tss << TEXT(" - ") << client->getAsString();
