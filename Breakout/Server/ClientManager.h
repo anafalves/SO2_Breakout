@@ -18,6 +18,8 @@ public:
 	void AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId);
 	bool removeClient(std::tstring name);
 	bool removeClient(int id);
+	Player * getClientPlayer(int id);
+
 	tstring getClientsAsString() const;
 
 	bool hasRoom() const;

@@ -125,7 +125,7 @@ void ServerInterface::handleCommand(tstring command, vector<tstring> argv) {
 	}
 	else if (command == TEXT("exit")) 
 	{
-		//TODO: Create function on server to end with server
+		Server::exitServer();
 	}
 	else if (command == TEXT("clear")) 
 	{

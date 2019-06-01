@@ -12,6 +12,15 @@ const vector<Client *> ClientManager::getClientArray() const {
 	return clients;
 }
 
+Player * ClientManager::getClientPlayer(int id) {
+	for (auto & client : clients) {
+		if (id == client->getId())
+			return client->getPlayer();
+	}
+
+	return nullptr;
+}
+
 void ClientManager::AddClient(std::tstring name, Player * p, HANDLE flag, int &myId) {
 	HANDLE modify[2];
 

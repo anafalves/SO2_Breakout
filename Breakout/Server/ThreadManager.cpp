@@ -1,6 +1,101 @@
 #include "ThreadManager.h"
 #include "Server.h"
-#include "GameDataManager.h"
+
+enum GamePoints {
+	POINTS_FOR_TILE_HIT = 10,
+};
+
+DWORD WINAPI BonusHandler(LPVOID args) {
+
+	GameData * gameData = Server::gameData.getGameData();
+	Bonus * bonus = nullptr;
+	HANDLE hTimer = NULL;
+	LARGE_INTEGER liDueTime;
+	Tile * tile = (Tile*)args;
+
+	liDueTime.QuadPart = 100LL;
+
+	// Create an unnamed waitable timer.
+	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+	if (NULL == hTimer)
+	{
+		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
+		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	Server::gameData.lockAccessGameData();
+	Server::sharedMemory.waitForUpdateFlags();
+
+	for (auto & b : gameData->bonuses) {
+		if (!b.active) {
+			b.active = true;
+			bonus->type = tile->bonus;
+			bonus = &b;
+			break;
+		}
+	}
+	Server::sharedMemory.setUpdate();
+	Server::gameData.releaseAccessGameData();
+
+	if (bonus == nullptr)
+		return 1;
+
+	while (bonus->active) {
+		WaitForSingleObject(hTimer, INFINITE);
+
+		Server::gameData.lockAccessGameData();
+		Server::sharedMemory.waitForUpdateFlags();
+
+		bonus->posY += Server::config.getMovementSpeed();
+
+		for (auto & player : gameData->players) {
+			if (!player.active)
+				continue;
+
+			//If there is a collision with a player, applies effect
+			if (bonus->posY + bonus->height >= player.posY &&
+				bonus->posY <= player.posY + player.height &&
+				bonus->posX >= player.posX + player.width  &&
+				bonus->posX + bonus->width <= player.posX)
+			{
+				switch (bonus->type) {
+					case LIFE:
+						player.lives++;
+						break;
+
+					case TRIPLE:
+						gameData->balls[1] = gameData->balls[2] = gameData->balls[0];
+						gameData->balls[1].right = !gameData->balls[1].right;
+						gameData->balls[2].up = !gameData->balls[2].up;
+						break;
+
+					case SPEED_UP:
+						Server::config.setMovementSpeed(Server::config.getMovementSpeed() + 5);
+						break;
+
+					case SLOW_DOWN:
+						Server::config.setMovementSpeed(Server::config.getMovementSpeed() - 2);
+						break;
+				}
+
+				bonus->active = false;
+				Server::gameData.releaseAccessGameData();
+				Server::sharedMemory.setUpdate();
+				return 0;
+			}
+		}
+		Server::sharedMemory.setUpdate();
+		Server::gameData.releaseAccessGameData();
+	}
+
+	return 0;
+}
+
 
 DWORD WINAPI BallManager(LPVOID args) {
 	HANDLE hTimer = NULL;
@@ -85,12 +180,11 @@ DWORD WINAPI BallManager(LPVOID args) {
 					if (--tile.resistance == 0)
 						tile.active = false;
 
-					//TODO: placeholder
-					gameData->players[ball.playerId].points += 10;
+					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
 
 					if (tile.bonus)
 					{
-						//TODO: create thread to generate and handle that thing
+						Server::threadManager.startBonusThread(&tile);
 					}
 				}
 
@@ -104,18 +198,17 @@ DWORD WINAPI BallManager(LPVOID args) {
 					if (--tile.resistance == 0)
 						tile.active = false;
 
-					//TODO: placeholder
-					gameData->players[ball.playerId].points += 10;
+					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
 
 					if (tile.bonus)
 					{
-						//TODO: create thread to generate and handle that thing
+						Server::threadManager.startBonusThread(&tile);
 					}
 				}
 			}
 
 			for (auto &player : gameData->players) {
-				if (!player.active) {
+				if (!player.active || player.lives == 0) {
 					continue;
 				}
 
@@ -193,95 +286,6 @@ DWORD WINAPI BallManager(LPVOID args) {
 }
 
 
-DWORD WINAPI BonusHandler(LPVOID args) {
-	GameData * gameData = Server::gameData.getGameData();
-	Bonus * bonus = nullptr;
-	HANDLE hTimer = NULL;
-	LARGE_INTEGER liDueTime;
-	Tile * tile = (Tile*) args;
-	int nextPos;
-
-	liDueTime.QuadPart = 100LL;
-
-	// Create an unnamed waitable timer.
-	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
-	if (NULL == hTimer)
-	{
-		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
-		return -1;
-	}
-
-	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
-		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
-		return -1;
-	}
-
-	Server::gameData.lockAccessGameData();
-	Server::sharedMemory.waitForUpdateFlags();
-
-	for (auto & b : gameData->bonuses) {
-		if (!b.active) {
-			b.active = true;
-			bonus->type = tile->bonus;
-			bonus = &b;
-			break;
-		}
-	}
-	Server::sharedMemory.setUpdate();
-	Server::gameData.releaseAccessGameData();
-
-	if (bonus == nullptr)
-		return 1;
-
-	while (bonus->active) {
-		WaitForSingleObject(hTimer, INFINITE);
-		nextPos = bonus->posY + Server::config.getMovementSpeed();
-
-		Server::gameData.lockAccessGameData();
-		Server::sharedMemory.waitForUpdateFlags();
-
-		for (auto & player : gameData->players) {
-			if (!player.active)
-				continue;
-
-			if (bonus->posY + bonus->height >= player.posY &&
-				bonus->posY <= player.posY + player.height &&
-				bonus->posX >= player.posX + player.width  &&
-				bonus->posX + bonus->width <= player.posX)
-			{
-				switch (bonus->type) {
-					case LIFE:
-						player.lives++;
-						break;
-
-					case TRIPLE:
-						gameData->balls[1] = gameData->balls[2] = gameData->balls[0];
-						gameData->balls[1].right = !gameData->balls[1].right;
-						gameData->balls[2].up = !gameData->balls[2].up;
-						break;
-
-					case SPEED_UP:
-						Server::config.setMovementSpeed(Server::config.getMovementSpeed() + 5);
-						break;
-
-					case SLOW_DOWN:
-						Server::config.setMovementSpeed(Server::config.getMovementSpeed() - 2);
-						break;
-				}
-
-				bonus->active = false;
-				Server::gameData.releaseAccessGameData();
-				Server::sharedMemory.setUpdate();
-				return 0;
-			}
-		}
-		Server::sharedMemory.setUpdate();
-		Server::gameData.releaseAccessGameData();
-	}
-
-	return 0;
-}
-
 DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	bool * CONTINUE = (bool *)args;
 	bool ACTIVE = true;
@@ -298,11 +302,15 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 
 		switch (request.type) {
 			case MOVE:
-				//TODO: handle movement
+				player = Server::clients.getClientPlayer(request.id);
+				if(player->lives > 0)
+					Server::gameData.movePlayer(player, request.message.basicMove);
 				break;
 
 			case PRECISE_MOVE:
-				//TODO: handle precise movement
+				player = Server::clients.getClientPlayer(request.id);
+				if (player->lives > 0)
+					Server::gameData.movePlayerPrecise(player, request.message.preciseMove);
 				break;
 
 			case TOP10:
@@ -364,8 +372,11 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 bool sendMessage(const HANDLE hPipe, const ServerMsg &reply) {
 	bool success = false;
 	DWORD nBytes = 0;
+	OVERLAPPED flag;
 
-	success = WriteFile(hPipe, &reply, sizeof(ServerMsg), &nBytes, NULL); //TODO: add exit event
+	flag.hEvent = Server::sharedMemory.hExitEvent;
+
+	success = WriteFile(hPipe, &reply, sizeof(ServerMsg), &nBytes, &flag);
 	if (!success || nBytes != sizeof(ServerMsg)) {
 		return false;
 	}
@@ -395,6 +406,10 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 	free(info);
 
+	OVERLAPPED flag;
+
+	flag.hEvent = Server::sharedMemory.hExitEvent;
+
 	while (*CONTINUE && ACTIVE) 
 	{
 		// 2 - Starts handling messages from named pipe
@@ -402,7 +417,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 			&request,
 			sizeof(ClientMsg),
 			&nBytes,
-			NULL);
+			&flag);
 
 		if (!success || nBytes == 0 || GetLastError() == ERROR_BROKEN_PIPE)
 			break; //Pipe is no longer active
@@ -466,7 +481,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 						1,
 						sizeof(GameData),
 						sizeof(GameData),
-						NMPWAIT_USE_DEFAULT_WAIT, //TODO: change this wait
+						NMPWAIT_USE_DEFAULT_WAIT,
 						NULL
 					);
 
@@ -613,6 +628,19 @@ bool ThreadManager::startRemoteConnectionHandler() {
 	return true;
 }
 
+bool ThreadManager::startBonusThread(Tile * tile) {
+	HANDLE hThread;
+
+	hThread = CreateThread(nullptr, 0, BonusHandler, (LPVOID) tile, 0, nullptr);
+	if (hThread == nullptr) {
+		return false;
+	}
+
+	hBonuses.push_back(hThread);
+
+	return true;
+}
+
 bool ThreadManager::startBallThread() {
 	if (ballThreadRunning) {
 		return false;
@@ -691,3 +719,13 @@ void ThreadManager::waitForBallThread() {
 	WaitForSingleObject(hBallThread, INFINITE);
 	CloseHandle(hBallThread);
 }
+
+void ThreadManager::waitForBonusesThreads() {
+	if (hBonuses.size() > 0) {
+		WaitForMultipleObjects(hBonuses.size(), hBonuses.data(), TRUE, INFINITE);
+	}
+	 
+	for (auto & thread : hBonuses) {
+		CloseHandle(thread);
+	}
+};
