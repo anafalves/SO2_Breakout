@@ -135,6 +135,7 @@
     <ResourceCompile Include="Client.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="background.bmp" />
     <Image Include="bigIcon.bmp" />
     <Image Include="bigIcon.ico" />
     <Image Include="icon3.ico" />

@@ -51,6 +51,9 @@
     <Image Include="bigIcon.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="background.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="cursor1.cur">
