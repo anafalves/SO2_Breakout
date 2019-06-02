@@ -35,15 +35,11 @@ enum MessageConstants {
 };
 
 //Pipe and Local Client -> Server messages
-typedef struct {
-	int x;
-	int y;
-}PreciseMove;
-
 typedef union {
 	TCHAR name[MAX_NAME_LENGHT];
-	PreciseMove preciseMove;
+	int preciseMove;
 	int basicMove;
+	int update_id;
 }ClientRequest;
 
 typedef struct{
@@ -57,13 +53,13 @@ typedef struct{
 typedef union{
 	TCHAR receiver[MAX_NAME_LENGHT]; // for the login instance
 	Top10 top10;
-	int update_id;
-	GameData gameData; //TODO: This may be divided by parts, so only the necessary parts are sent to the client, if it is too slow.
+	GameData gameData;
 }ServerResponse;
 
 typedef struct {
 	int type;
 	int id;
+	int update_id;
 	ServerResponse message;
 }ServerMsg;
 //end

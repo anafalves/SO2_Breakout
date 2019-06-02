@@ -16,19 +16,20 @@ enum GameConfigDefaults {
 	DEFAULT_SLOWDOWN_COUNT = 15,
 	DEFAULT_LIVES_COUNT = 3,
 	DEFAULT_TILE_COUNT = 80,
-	DEFAULT_MOVEMENT_SPEED = 10, //TODO: maybe change this?
+	DEFAULT_MOVEMENT_SPEED = 10,
 	DEFAULT_BONUS_RATE = 25,
 };
 
 class GameConfig {
 private:
+	int initialMovementSpeed;
 	int maxPlayerCount;
 	int levelCount;
 	int speedUpCount;
 	int slowDownCount;
 	int initialLives;
 	int initialTileCount;
-	int movementSpeed; // TODO: player movement speed or tiles movement speed?
+	int movementSpeed;
 	double bonusDropRate;
 
 public:

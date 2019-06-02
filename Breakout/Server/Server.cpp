@@ -52,22 +52,21 @@ int Server::startServer(tstring fileName) {
 	if (!threadManager.startGameDataBroadcaster()) {
 		return BROADCASTER_STARTUP_ERROR;
 	}
-	//TODO:Launch server threads, comm threads and others.
 
 	//TODO: Create a game thread, that will handle the game and start the ball as the players loose it and what not
-	//TODO: Call Connection Handler to startup connection threads and services
 
 	return SERVER_STARTED;
 }
 
 void Server::exitServer() {
-
 	SetEvent(sharedMemory.hExitEvent);
 	threadManager.endBallThread();
 	threadManager.endGameDataBroadcasterThread();
 	threadManager.endLocalClientHandler();
+	threadManager.endRemoteConnectionHandler();
 
+	threadManager.waitForRemoteConnectionThread();
+	threadManager.waitForLocalClientThread();
 	threadManager.waitForBallThread();
 	threadManager.waitForGameDataBroadcaster();
-	threadManager.waitForLocalClientThread();
 }

@@ -1,19 +1,117 @@
 #include "ThreadManager.h"
 #include "Server.h"
 
-enum TimeConversions {
-	MILLISECOND = 1000 * 10,
+enum GamePoints {
+	POINTS_FOR_TILE_HIT = 10,
 };
+
+DWORD WINAPI BonusHandler(LPVOID args) {
+
+	GameData * gameData = Server::gameData.getGameData();
+	Bonus * bonus = nullptr;
+	HANDLE hTimer = NULL;
+	LARGE_INTEGER liDueTime;
+	Tile * tile = (Tile*)args;
+
+	liDueTime.QuadPart = 100LL;
+
+	// Create an unnamed waitable timer.
+	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+	if (NULL == hTimer)
+	{
+		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
+		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	Server::gameData.lockAccessGameData();
+	Server::sharedMemory.waitForUpdateFlags();
+
+	for (auto & b : gameData->bonuses) {
+		if (!b.active) {
+			b.active = true;
+			bonus->type = tile->bonus;
+			bonus = &b;
+			break;
+		}
+	}
+	Server::sharedMemory.setUpdate();
+	Server::gameData.releaseAccessGameData();
+
+	if (bonus == nullptr)
+		return 1;
+
+	while (bonus->active) {
+		WaitForSingleObject(hTimer, INFINITE);
+
+		Server::gameData.lockAccessGameData();
+		Server::sharedMemory.waitForUpdateFlags();
+
+		bonus->posY += Server::config.getMovementSpeed();
+
+		for (auto & player : gameData->players) {
+			if (!player.active)
+				continue;
+
+			//If there is a collision with a player, applies effect
+			if (bonus->posY + bonus->height >= player.posY &&
+				bonus->posY <= player.posY + player.height &&
+				bonus->posX >= player.posX + player.width  &&
+				bonus->posX + bonus->width <= player.posX)
+			{
+				switch (bonus->type) {
+					case LIFE:
+						player.lives++;
+						break;
+
+					case TRIPLE:
+						gameData->balls[1] = gameData->balls[2] = gameData->balls[0];
+						gameData->balls[1].right = !gameData->balls[1].right;
+						gameData->balls[2].up = !gameData->balls[2].up;
+						break;
+
+					case SPEED_UP:
+						Server::config.setMovementSpeed(Server::config.getMovementSpeed() + 5);
+						break;
+
+					case SLOW_DOWN:
+						Server::config.setMovementSpeed(Server::config.getMovementSpeed() - 2);
+						break;
+				}
+
+				bonus->active = false;
+				Server::gameData.releaseAccessGameData();
+				Server::sharedMemory.setUpdate();
+				return 0;
+			}
+		}
+		Server::sharedMemory.setUpdate();
+		Server::gameData.releaseAccessGameData();
+	}
+
+	return 0;
+}
+
 
 DWORD WINAPI BallManager(LPVOID args) {
 	HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
-	bool * CONTINUE = (bool *)args;
-	int time;
+	GameData * gameData;
 
-	liDueTime.QuadPart = 100LL;
+	int ballLeft, ballRight, ballTop, ballBottom;
+	int tileLeft, tileRight, tileTop, tileBottom;
+	int playerLeft, playerRight, playerTop, playerBottom;
+
+	bool ballAvailable;
+	bool * CONTINUE = (bool *)args;
+
 	*CONTINUE = true;
-	time = Server::config.getMovementSpeed() * SPEEDFACTOR;
+	gameData = Server::gameData.getGameData();
+	liDueTime.QuadPart = 100LL;
 
 	// Create an unnamed waitable timer.
 	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
@@ -26,7 +124,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 	Server::gameData.setupGameStart();
 	//TODO: sperar pelo sem�foro / mutex de inicio do jogo para poder avan�ar
 
-	if (!SetWaitableTimer(hTimer, &liDueTime, time, NULL, NULL, 0)) {
+	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
 		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
 		return -1;
 	}
@@ -34,11 +132,153 @@ DWORD WINAPI BallManager(LPVOID args) {
 	while (*CONTINUE)
 	{
 		WaitForSingleObject(hTimer, INFINITE);
+		Server::gameData.lockAccessGameData();
+		Server::sharedMemory.waitForUpdateFlags();
 
-		Server::gameData.moveActiveBalls();
+		for (auto &ball : gameData->balls) {
+			if (!ball.active) {
+				continue;
+			}
+
+			if (ball.up) {
+				ball.posY++;
+			}
+			else {
+				ball.posY--;
+			}
+
+			if (ball.right) {
+				ball.posX++;
+			}
+			else {
+				ball.posX--;
+			}
+
+			//TODO: verify if the Y it's in the tile zone before doing this
+			ballLeft = ball.posX;
+			ballRight = ball.posX + ball.width;
+			ballTop = ball.posY;
+			ballBottom = ball.posY + ball.height;
+
+			for (auto &tile : gameData->tiles) {
+				if (!tile.active) {
+					continue;
+				}
+
+				tileLeft = tile.posX;
+				tileRight = tile.posX + tile.width;
+				tileTop = tile.posY;
+				tileBottom = tile.posY + tile.height;
+
+				//if ball hits right or left of a tile
+				if ((ballLeft < tileRight && tileRight < ballRight) ||
+					(ballLeft < tileLeft && tileLeft < ballRight) &&
+					(tileTop <= ballTop || tileBottom >= ballBottom))
+				{
+					ball.right = !ball.right;
+
+					if (--tile.resistance == 0)
+						tile.active = false;
+
+					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
+
+					if (tile.bonus)
+					{
+						Server::threadManager.startBonusThread(&tile);
+					}
+				}
+
+				//if ball hits top or bottom of a tile
+				if ((ballTop < tileTop && tileTop < ballBottom) ||
+					(ballTop < tileBottom && tileBottom < ballBottom) &&
+					(tileLeft <= ballLeft || tileRight >= ballRight))
+				{
+					ball.up = !ball.up;
+
+					if (--tile.resistance == 0)
+						tile.active = false;
+
+					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
+
+					if (tile.bonus)
+					{
+						Server::threadManager.startBonusThread(&tile);
+					}
+				}
+			}
+
+			for (auto &player : gameData->players) {
+				if (!player.active || player.lives == 0) {
+					continue;
+				}
+
+				playerLeft = player.posX;
+				playerRight = player.posX + player.width;
+				playerTop = player.posY;
+				playerBottom = player.posY + player.height;
+
+				//ball hit player on top
+				if ((ballTop < playerTop && playerTop < ballBottom) &&
+					(playerLeft <= ballLeft || playerLeft <= ballRight))
+				{
+					ball.up = !ball.up;
+					ball.playerId = player.id;
+				}
+
+				if ((ballLeft < playerRight && playerRight < ballRight) ||
+					(ballLeft < playerLeft && playerLeft < ballRight) &&
+					(playerTop <= ballTop || playerBottom >= ballBottom))
+				{
+					ball.up = !ball.up;
+					ball.right = !ball.right;
+					ball.playerId = player.id;
+				}
+			}
+
+			//Verify if ball is in one of the of the limits, so it can change position
+			if (ball.posX == MAX_WIDTH || ball.posX == MIN_WIDTH) {
+				ball.right = !ball.right;
+			}
+
+			if (ball.posY == MAX_HEIGHT) {
+				ball.up = !ball.up;
+			}
+
+			if (ball.posY == MIN_HEIGHT) {
+				ball.active = false;
+				gameData->players[ball.playerId].lives--;
+			}
+		}
+
+		//Verify if there are still balls in the game
+		ballAvailable = false;
+
+		for (auto & ball : gameData->balls) {
+			if (ball.active)
+				ballAvailable = true;
+		}
+
+		if (!ballAvailable) {
+			for (auto & player : gameData->players) {
+				if (player.active) {
+					if (player.lives > 0) {
+						Server::gameData.setupBall();
+						ballAvailable = true;
+						break;
+					}
+				}
+			}
+		}
+
 		Server::sharedMemory.setUpdate();
+		Server::gameData.releaseAccessGameData();
 
+		if (!ballAvailable) {
+			gameData->gameState = GAME_OVER;
+			break;
+		}
 	}
+
 	tcout << "Ball Thread Ended" << endl;
 	CloseHandle(hTimer);
 
@@ -52,6 +292,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	Player * player = nullptr;
 	ClientMsg request;
 	ServerMsg reply;
+	HANDLE flag;
 
 	*CONTINUE = true;
 	
@@ -61,11 +302,15 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 
 		switch (request.type) {
 			case MOVE:
-				//TODO: handle movement
+				player = Server::clients.getClientPlayer(request.id);
+				if(player->lives > 0)
+					Server::gameData.movePlayer(player, request.message.basicMove);
 				break;
 
 			case PRECISE_MOVE:
-				//TODO: handle precise movement
+				player = Server::clients.getClientPlayer(request.id);
+				if (player->lives > 0)
+					Server::gameData.movePlayerPrecise(player, request.message.preciseMove);
 				break;
 
 			case TOP10:
@@ -92,41 +337,27 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 						break;
 					}
 
-					reply.message.update_id = Server::sharedMemory.addClientUpdateFlag(); //Creats a handle to sync server write and local clirne read operations
-					if (reply.message.update_id < 0) {
+					reply.update_id = Server::sharedMemory.addClientUpdateFlag(flag); //Creats a handle to sync server write and local clirne read operations
+					if (reply.update_id < 0) {
 						reply.type = DENY_SERVER_FULL;
 						Server::sharedMemory.writeMessage(reply);
 						break;
 					}
 
-					Server::clients.AddClient(request.message.name, player, reply.id);
+					Server::clients.AddClient(request.message.name, player, flag, reply.id);
+					
 					reply.type = ACCEPT;
+					_tcscpy_s(reply.message.receiver, request.message.name);
 
-					//TODO: do something about this later!
 					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 				}
 
 				Server::sharedMemory.writeMessage(reply);
 				break;
 
-			case SPECTATOR:
-			{
-				int id = Server::sharedMemory.addClientUpdateFlag();
-				if (id < 0)
-				{
-					reply.type = DENY_SPECTATOR;
-				}
-				else {
-					reply.type = SPECTATOR;
-					reply.message.update_id = id;
-				}
-				Server::sharedMemory.writeMessage(reply);
-
-				break;
-			}
 			case LEAVE:
-				request.message.basicMove;
-				ACTIVE = false;
+				Server::sharedMemory.writeMessage(reply);
+				Server::clients.removeClient(request.id);
 				break;
 		}//End of switch
 	}//End of while
@@ -137,12 +368,23 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	return 0;
 }
 
-bool sendMessage(const HANDLE hPipe, const ServerMsg &reply) {
-	bool success = false;
+bool sendMessage(const HANDLE hPipe, const ServerMsg &reply, HANDLE writeReady) {
+	
 	DWORD nBytes = 0;
+	HANDLE write[2];
+	OVERLAPPED flag = {0};
 
-	success = WriteFile(hPipe, &reply, sizeof(ServerMsg), &nBytes, NULL); //TODO: add exit event
-	if (!success || nBytes != sizeof(ServerMsg)) {
+	write[0] = writeReady;
+	write[1] = Server::sharedMemory.hExitEvent;
+
+	flag.hEvent = writeReady;
+	ResetEvent(writeReady);
+
+	WriteFile(hPipe, &reply, sizeof(ServerMsg), &nBytes, &flag);
+	WaitForMultipleObjects(2, write, FALSE, INFINITE);
+
+	GetOverlappedResult(hPipe, &flag, &nBytes, FALSE);
+	if (nBytes != sizeof(ServerMsg)) {
 		return false;
 	}
 	
@@ -160,28 +402,56 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 	PipeInfo * info = (PipeInfo *) args;
 	HANDLE hPipe = info->pipe;
 
-	bool success = false;
 	bool * CONTINUE = info->CONTINUE;
 	bool ACTIVE = true;
+
+	free(info);
 
 	Player * player = nullptr;
 	ClientMsg request;
 	ServerMsg reply;
 	DWORD nBytes = 0;
 
-	free(info);
+	OVERLAPPED flag;
+	HANDLE read[2];
+	HANDLE readReady;
+	HANDLE writeReady;
+	
+	reply.id = -1;
+
+	//Overlapped IO for stopping app in case of exit
+	readReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (readReady == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+
+	writeReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (writeReady == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+
+	read[0] = readReady;
+	read[1] = Server::sharedMemory.hExitEvent;
 
 	while (*CONTINUE && ACTIVE) 
 	{
+		SecureZeroMemory(&flag, sizeof(OVERLAPPED));
+		ResetEvent(readReady);
+		flag.hEvent = readReady;
+
 		// 2 - Starts handling messages from named pipe
-		success = ReadFile(hPipe,
+		ReadFile(hPipe,
 			&request,
 			sizeof(ClientMsg),
 			&nBytes,
-			NULL);
+			&flag);
 
-		if (!success || nBytes == 0 || GetLastError() == ERROR_BROKEN_PIPE)
-			break; //Pipe is no longer active
+		WaitForMultipleObjects(2, read, FALSE, INFINITE);
+
+		GetOverlappedResult(hPipe, &flag, &nBytes, FALSE);
+		if (nBytes != sizeof(ClientMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
+			break;
+		}
 
 		switch (request.type) {
 			case MOVE:
@@ -193,7 +463,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 			case TOP10:
 				reply.type = TOP10;
 				reply.message.top10 = Server::topPlayers.getTop10();
-				if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE)
+				if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE)
 					ACTIVE = false;
 
 				break;
@@ -206,14 +476,14 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 				if (!Server::clients.hasRoom()) {
 					reply.type = DENY_SERVER_FULL;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE) {
+					if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE) {
 						ACTIVE = false;
 						break;
 					}
 				}
 				else if (!Server::clients.isNameAvailable(request.message.name)) {
 					reply.type = DENY_USERNAME;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE) {
+					if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE) {
 						ACTIVE = false;
 						break;
 					}
@@ -242,7 +512,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 						1,
 						sizeof(GameData),
 						sizeof(GameData),
-						NMPWAIT_USE_DEFAULT_WAIT, //TODO: change this wait
+						NMPWAIT_USE_DEFAULT_WAIT,
 						NULL
 					);
 
@@ -255,28 +525,13 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 					//Send message to client, so they can connect to the GameData namedpipe
 					reply.type = ACCEPT;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE){
+					if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE){
 						tcout << "couldn't send message to client!" << endl;
 						ACTIVE = false;
 						break;
 					}
 
-					clientConnected = ConnectNamedPipe(hGameDataPipe, NULL);
-					if (clientConnected || (GetLastError() == ERROR_PIPE_CONNECTED))
-						clientConnected = true;
-
-					if (clientConnected) {
-						// 4 - After connectiing the thread creates and adds the user to the active users pool.
-						Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
-					}
-					else {
-						tcout << "client couldn't connect to GameDataPipe!" << endl;
-						closePipeConnection(hGameDataPipe);
-						break;
-					}
-					tcout << "user ready!" << endl;
-					Server::threadManager.startBallThread();
-
+					Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
 					break;
 				}
 			} //End of Login case
@@ -288,7 +543,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 		}
 	}
 	// 5 - Once the user leaves, crashes or pipe closes/error, the thread removes the user from the pool.
-	Server::clients.removeClient(request.id);
+	Server::clients.removeClient(reply.id);
 
 	return 0;
 }
@@ -316,7 +571,8 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 
 		clientInfo->pipe = CreateNamedPipe(
 			pipeName.c_str(),
-			PIPE_ACCESS_DUPLEX,
+			PIPE_ACCESS_DUPLEX |
+			FILE_FLAG_OVERLAPPED,
 			PIPE_TYPE_MESSAGE |
 			PIPE_READMODE_MESSAGE |
 			PIPE_WAIT,
@@ -343,14 +599,17 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 				CloseHandle(clientInfo->pipe);
 			}
 			clientThreads.push_back(thread);
+			CloseHandle(thread);
 		}
 		else {
 			CloseHandle(clientInfo->pipe);
 		}
 	}
 
-	CONTINUE = false;
-	WaitForMultipleObjects((DWORD) clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
+	*CONTINUE = false;
+	WaitForMultipleObjects(clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
+
+	tcout << "Remote client handler Thread ended" << endl;
 
 	return 0;
 }
@@ -366,8 +625,6 @@ DWORD WINAPI GameDataBroadcast(LPVOID args) {
 
 	while (*CONTINUE) {
 		WaitForMultipleObjects(2,update,FALSE,INFINITE);
-		Server::sharedMemory.waitForUpdateFlags();
-
 		Server::clients.broadcastGameData();
 	}
 
@@ -402,6 +659,19 @@ bool ThreadManager::startRemoteConnectionHandler() {
 	if (hRemoteConnectionHandler == nullptr) {
 		return false;
 	}
+
+	return true;
+}
+
+bool ThreadManager::startBonusThread(Tile * tile) {
+	HANDLE hThread;
+
+	hThread = CreateThread(nullptr, 0, BonusHandler, (LPVOID) tile, 0, nullptr);
+	if (hThread == nullptr) {
+		return false;
+	}
+
+	hBonuses.push_back(hThread);
 
 	return true;
 }
@@ -466,6 +736,21 @@ void ThreadManager::endGameDataBroadcasterThread(){
 }
 
 void ThreadManager::waitForRemoteConnectionThread() {
+	tstring pipeName(TEXT("\\\\.\\") + PipeConstants::MESSAGE_PIPE_NAME);
+	HANDLE hPipeMessage = CreateFile(
+		pipeName.c_str(),
+		GENERIC_READ |
+		GENERIC_WRITE,
+		0 | FILE_SHARE_READ |
+		FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+
+	CloseHandle(hPipeMessage);
+
 	WaitForSingleObject(hRemoteConnectionHandler, INFINITE);
 	CloseHandle(hBroadcastThread);
 }
@@ -484,3 +769,13 @@ void ThreadManager::waitForBallThread() {
 	WaitForSingleObject(hBallThread, INFINITE);
 	CloseHandle(hBallThread);
 }
+
+void ThreadManager::waitForBonusesThreads() {
+	if (hBonuses.size() > 0) {
+		WaitForMultipleObjects(hBonuses.size(), hBonuses.data(), TRUE, INFINITE);
+	}
+	 
+	for (auto & thread : hBonuses) {
+		CloseHandle(thread);
+	}
+};

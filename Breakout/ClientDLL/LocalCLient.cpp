@@ -9,11 +9,11 @@ bool LocalCLient::login(TCHAR * name)
 	_tcscpy_s(msg.message.name, name);
 
 	sendMessage(msg);
+	answer = receiveMessageLogin(name);
 
-	answer = receiveMessageWithTimeout();
 	if (answer.type == ACCEPT) {
 		setClientID(answer.id);
-		setUpdateId(answer.message.update_id);
+		setUpdateId(answer.update_id);
 
 		if (sharedMemmoryContent.getUpdateFlag(update_id) == false) {
 			msg.type = LEAVE;
@@ -33,6 +33,7 @@ GameData LocalCLient::receiveBroadcast() {
 	update[0] = sharedMemmoryContent.hUpdateEvent;
 	update[1] = sharedMemmoryContent.hExitEvent;
 
+	SetEvent(sharedMemmoryContent.hReadyForUpdate);
 	WaitForMultipleObjects(2, update, FALSE, INFINITE);
 	data = (*sharedMemmoryContent.viewGameData);
 	SetEvent(sharedMemmoryContent.hReadyForUpdate);
@@ -74,26 +75,29 @@ ServerMsg LocalCLient::receiveMessage() {
 	read[0] = sharedMemmoryContent.hClientReadMutex;
 	read[1] = sharedMemmoryContent.hExitEvent;
 
-	WaitForMultipleObjects(2, full, FALSE, INFINITE);
-	WaitForMultipleObjects(2, read, FALSE, INFINITE);
+	while (true) {
+		WaitForMultipleObjects(2, full, FALSE, INFINITE);
+		WaitForMultipleObjects(2, read, FALSE, INFINITE);
 
-	msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
-	if (msg.id == getClientID()) {
-		sharedMemmoryContent.viewServerBuffer->read_pos++;
-		sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
-		
-		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-		ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
-	}
-	else {
-		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-		ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+		msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
+		if (msg.id == getClientID()) {
+			sharedMemmoryContent.viewServerBuffer->read_pos++;
+			sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+
+			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+			break;
+		}
+		else {
+			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+		}
 	}
 
 	return msg;
 }
 
-ServerMsg LocalCLient::receiveMessageWithTimeout()
+ServerMsg LocalCLient::receiveMessageLogin(tstring name)
 {
 	ServerMsg msg;
 
@@ -109,25 +113,29 @@ ServerMsg LocalCLient::receiveMessageWithTimeout()
 	read[0] = sharedMemmoryContent.hClientReadMutex;
 	read[1] = sharedMemmoryContent.hExitEvent;
 
-	dWaitResult = WaitForMultipleObjects(2, full, FALSE, timeOut);
-	if (dWaitResult == WAIT_TIMEOUT) {
-		msg.type = TIMEDOUT;
-		return msg;
-	}
+	while (true) {
+		dWaitResult = WaitForMultipleObjects(2, full, FALSE, timeOut);
+		if (dWaitResult == WAIT_TIMEOUT) {
+			msg.type = TIMEDOUT;
+			return msg;
+		}
 
-	WaitForMultipleObjects(2, read, FALSE, INFINITE);
+		WaitForMultipleObjects(2, read, FALSE, INFINITE);
 
-	msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
-	if (msg.id == getClientID()) {
-		sharedMemmoryContent.viewServerBuffer->read_pos++;
-		sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+		msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
 
-		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-		ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
-	}
-	else {
-		ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-		ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+		if (name == msg.message.receiver) {
+			sharedMemmoryContent.viewServerBuffer->read_pos++;
+			sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+
+			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+			break;
+		}
+		else {
+			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+		}
 	}
 
 	return msg;

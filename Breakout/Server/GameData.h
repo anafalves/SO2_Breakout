@@ -3,18 +3,25 @@ enum Constants {
 	MAX_PLAYERS = 20,
 	MAX_BONUSES = 50,
 	MAX_BALLS = 3,
-	MAX_TILES = 1000
+	MAX_TILES = 300
+};
+
+enum GameState {
+	STARTED,
+	GAME_OVER,
+	GAME_WON,
+	LOBBY
 };
 
 enum BonusType {
-	SPEED_UP = 0,
+	NORMAL = 0,
+	SPEED_UP,
 	SLOW_DOWN,
 	LIFE,
 	TRIPLE
 };
 
 //TODO: Add enum with default sizes for objects
-//TODO: Verify if these structures need to be changed
 
 typedef struct ball {
 	int posX;
@@ -58,7 +65,8 @@ typedef struct bonus {
 	bool active;
 }Bonus;
 
-typedef struct gameData {
+typedef struct _gameData {
+	int gameState;
 	Ball balls[MAX_BALLS];
 	Tile tiles[MAX_TILES];
 	Bonus bonuses[MAX_BONUSES];

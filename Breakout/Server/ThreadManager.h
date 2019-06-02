@@ -1,10 +1,11 @@
 #pragma once
 #include <Windows.h>
 #include <tchar.h>
+#include <vector>
+#include "GameDataManager.h"
 #include "UnicodeConfigs.h"
 
 enum ThreadConstants {
-	SPEEDFACTOR = 10,
 	BUFFERSIZE = 4096,
 };
 
@@ -28,6 +29,8 @@ private:
 
 	HANDLE hRemoteConnectionHandler;
 	bool remoteConnectionHandlerRunning;
+
+	vector<HANDLE> hBonuses;
 
 public:
 	ThreadManager() {
@@ -53,6 +56,7 @@ public:
 	bool startLocalClientHandler();
 	bool startRemoteConnectionHandler();
 	bool startBallThread();
+	bool startBonusThread(Tile * tile);
 
 	void endBallThread();
 	void endGameDataBroadcasterThread();
@@ -63,4 +67,5 @@ public:
 	void waitForLocalClientThread();
 	void waitForRemoteConnectionThread();
 	void waitForBallThread();
+	void waitForBonusesThreads();
 };

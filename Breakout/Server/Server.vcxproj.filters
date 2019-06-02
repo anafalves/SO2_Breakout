@@ -90,9 +90,6 @@
     <ClCompile Include="GeneralConstants.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Spectator.cpp">
-      <Filter>Source Files\Communication\ClientClasses</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
