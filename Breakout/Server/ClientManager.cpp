@@ -81,6 +81,7 @@ bool ClientManager::removeClient(int id) {
 
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getId() == id) {
+			delete clients[i];
 			clients.erase(clients.begin() + i);
 			return true;
 		}

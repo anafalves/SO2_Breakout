@@ -59,15 +59,14 @@ int Server::startServer(tstring fileName) {
 }
 
 void Server::exitServer() {
-
 	SetEvent(sharedMemory.hExitEvent);
 	threadManager.endBallThread();
 	threadManager.endGameDataBroadcasterThread();
 	threadManager.endLocalClientHandler();
 	threadManager.endRemoteConnectionHandler();
 
+	threadManager.waitForRemoteConnectionThread();
+	threadManager.waitForLocalClientThread();
 	threadManager.waitForBallThread();
 	threadManager.waitForGameDataBroadcaster();
-	threadManager.waitForLocalClientThread();
-	threadManager.waitForRemoteConnectionThread();
 }

@@ -353,7 +353,6 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				}
 
 				Server::sharedMemory.writeMessage(reply);
-				Server::threadManager.startBallThread();
 				break;
 
 			case LEAVE:
@@ -369,15 +368,23 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	return 0;
 }
 
-bool sendMessage(const HANDLE hPipe, const ServerMsg &reply) {
-	bool success = false;
+bool sendMessage(const HANDLE hPipe, const ServerMsg &reply, HANDLE writeReady) {
+	
 	DWORD nBytes = 0;
-	OVERLAPPED flag;
+	HANDLE write[2];
+	OVERLAPPED flag = {0};
 
-	flag.hEvent = Server::sharedMemory.hExitEvent;
+	write[0] = writeReady;
+	write[1] = Server::sharedMemory.hExitEvent;
 
-	success = WriteFile(hPipe, &reply, sizeof(ServerMsg), &nBytes, &flag);
-	if (!success || nBytes != sizeof(ServerMsg)) {
+	flag.hEvent = writeReady;
+	ResetEvent(writeReady);
+
+	WriteFile(hPipe, &reply, sizeof(ServerMsg), &nBytes, &flag);
+	WaitForMultipleObjects(2, write, FALSE, INFINITE);
+
+	GetOverlappedResult(hPipe, &flag, &nBytes, FALSE);
+	if (nBytes != sizeof(ServerMsg)) {
 		return false;
 	}
 	
@@ -395,32 +402,56 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 	PipeInfo * info = (PipeInfo *) args;
 	HANDLE hPipe = info->pipe;
 
-	bool success = false;
 	bool * CONTINUE = info->CONTINUE;
 	bool ACTIVE = true;
+
+	free(info);
 
 	Player * player = nullptr;
 	ClientMsg request;
 	ServerMsg reply;
 	DWORD nBytes = 0;
 
-	free(info);
-
 	OVERLAPPED flag;
+	HANDLE read[2];
+	HANDLE readReady;
+	HANDLE writeReady;
+	
+	reply.id = -1;
 
-	flag.hEvent = Server::sharedMemory.hExitEvent;
+	//Overlapped IO for stopping app in case of exit
+	readReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (readReady == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+
+	writeReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (writeReady == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+
+	read[0] = readReady;
+	read[1] = Server::sharedMemory.hExitEvent;
 
 	while (*CONTINUE && ACTIVE) 
 	{
+		SecureZeroMemory(&flag, sizeof(OVERLAPPED));
+		ResetEvent(readReady);
+		flag.hEvent = readReady;
+
 		// 2 - Starts handling messages from named pipe
-		success = ReadFile(hPipe,
+		ReadFile(hPipe,
 			&request,
 			sizeof(ClientMsg),
 			&nBytes,
 			&flag);
 
-		if (!success || nBytes == 0 || GetLastError() == ERROR_BROKEN_PIPE)
-			break; //Pipe is no longer active
+		WaitForMultipleObjects(2, read, FALSE, INFINITE);
+
+		GetOverlappedResult(hPipe, &flag, &nBytes, FALSE);
+		if (nBytes != sizeof(ClientMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
+			break;
+		}
 
 		switch (request.type) {
 			case MOVE:
@@ -432,7 +463,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 			case TOP10:
 				reply.type = TOP10;
 				reply.message.top10 = Server::topPlayers.getTop10();
-				if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE)
+				if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE)
 					ACTIVE = false;
 
 				break;
@@ -445,14 +476,14 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 				if (!Server::clients.hasRoom()) {
 					reply.type = DENY_SERVER_FULL;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE) {
+					if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE) {
 						ACTIVE = false;
 						break;
 					}
 				}
 				else if (!Server::clients.isNameAvailable(request.message.name)) {
 					reply.type = DENY_USERNAME;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE) {
+					if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE) {
 						ACTIVE = false;
 						break;
 					}
@@ -494,7 +525,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 					//Send message to client, so they can connect to the GameData namedpipe
 					reply.type = ACCEPT;
-					if (!sendMessage(hPipe, reply) && GetLastError() == ERROR_BROKEN_PIPE){
+					if (!sendMessage(hPipe, reply, writeReady) && GetLastError() == ERROR_BROKEN_PIPE){
 						tcout << "couldn't send message to client!" << endl;
 						ACTIVE = false;
 						break;
@@ -540,7 +571,8 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 
 		clientInfo->pipe = CreateNamedPipe(
 			pipeName.c_str(),
-			PIPE_ACCESS_DUPLEX,
+			PIPE_ACCESS_DUPLEX |
+			FILE_FLAG_OVERLAPPED,
 			PIPE_TYPE_MESSAGE |
 			PIPE_READMODE_MESSAGE |
 			PIPE_WAIT,
@@ -567,14 +599,17 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 				CloseHandle(clientInfo->pipe);
 			}
 			clientThreads.push_back(thread);
+			CloseHandle(thread);
 		}
 		else {
 			CloseHandle(clientInfo->pipe);
 		}
 	}
 
-	CONTINUE = false;
-	WaitForMultipleObjects((DWORD) clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
+	*CONTINUE = false;
+	WaitForMultipleObjects(clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
+
+	tcout << "Remote client handler Thread ended" << endl;
 
 	return 0;
 }
@@ -701,6 +736,21 @@ void ThreadManager::endGameDataBroadcasterThread(){
 }
 
 void ThreadManager::waitForRemoteConnectionThread() {
+	tstring pipeName(TEXT("\\\\.\\") + PipeConstants::MESSAGE_PIPE_NAME);
+	HANDLE hPipeMessage = CreateFile(
+		pipeName.c_str(),
+		GENERIC_READ |
+		GENERIC_WRITE,
+		0 | FILE_SHARE_READ |
+		FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+
+	CloseHandle(hPipeMessage);
+
 	WaitForSingleObject(hRemoteConnectionHandler, INFINITE);
 	CloseHandle(hBroadcastThread);
 }

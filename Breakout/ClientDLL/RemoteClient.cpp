@@ -34,7 +34,8 @@ bool RemoteClient::connect(TCHAR * ipAddr) {
 		pipeName.c_str(),
 		GENERIC_READ |
 		GENERIC_WRITE,
-		0,
+		0 | FILE_SHARE_READ |
+		FILE_SHARE_WRITE,
 		NULL,
 		OPEN_EXISTING,
 		0,
@@ -60,7 +61,7 @@ bool RemoteClient::sendMessage(ClientMsg message) {
 	HANDLE write[2] = { hWriteMutex, hExitEvent };
 	DWORD nBytes = 0;
 	bool success = false;
-
+	//TODO: add overlapped IO operations here
 	WaitForMultipleObjects(2, write, FALSE, INFINITE);
 
 	success = WriteFile(hPipeMessage, &message, sizeof(ClientMsg), &nBytes, NULL);
@@ -78,6 +79,7 @@ ServerMsg RemoteClient::receiveMessage() {
 	ServerMsg response;
 	bool success = false;
 
+	//TODO: add overlapped IO operations here
 	success = ReadFile(hPipeMessage, &response, sizeof(ServerMsg), &nBytes, NULL);
 	if (!success || nBytes != sizeof(ServerMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
 		response.type = -1;
@@ -108,7 +110,7 @@ bool RemoteClient::connectToGameDataPipe(TCHAR * name) {
 		0,
 		NULL,
 		OPEN_EXISTING,
-		0,
+		0 | FILE_FLAG_OVERLAPPED,
 		NULL
 	);
 
@@ -158,9 +160,10 @@ GameData RemoteClient::receiveBroadcast() {
 	GameData data;
 	bool success = false;
 
+	//TODO: make this return false or something in case it fails due to pipe.
 	success = ReadFile(hPipeGameData, &data, sizeof(GameData), &nBytes, NULL);
 	if (!success || nBytes != sizeof(GameData) || GetLastError() == ERROR_BROKEN_PIPE) {
-		data.balls[0].playerId = -1;
+		data.balls[0].playerId = -1; //TODO: set game state here
 	}
 
 	return data;
