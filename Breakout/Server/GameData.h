@@ -13,6 +13,10 @@ enum GameState {
 	LOBBY
 };
 
+enum TilesValue {
+	UNBREAKABLE = -1,
+};
+
 enum BonusType {
 	NORMAL = 0,
 	SPEED_UP,
