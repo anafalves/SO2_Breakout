@@ -14,7 +14,7 @@ enum GameState {
 };
 
 enum TilesValue {
-	UNBREAKABLE = -1;
+	UNBREAKABLE = -1,
 };
 
 enum BonusType {
