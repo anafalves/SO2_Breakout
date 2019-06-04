@@ -96,17 +96,31 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 	return 0;
 }
 
+DWORD WINAPI Game(LPVOID args) {
+
+	//Algorithm
+	// 1 - Run though users and make them active.
+	// 2 - 
+
+	//TODO: Create GameData Initializer
+	//TODO: Create user setup function
+
+}
 
 DWORD WINAPI BallManager(LPVOID args) {
 	HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
 	GameData * gameData;
 
+	bool hit;
+	bool ballAvailable;
+	bool playersAlive;
+	bool tilesAvailable;
+
 	int ballLeft, ballRight, ballTop, ballBottom;
 	int tileLeft, tileRight, tileTop, tileBottom;
 	int playerLeft, playerRight, playerTop, playerBottom;
 
-	bool ballAvailable;
 	bool * CONTINUE = (bool *)args;
 
 	*CONTINUE = true;
@@ -134,6 +148,11 @@ DWORD WINAPI BallManager(LPVOID args) {
 		WaitForSingleObject(hTimer, INFINITE);
 		Server::gameData.lockAccessGameData();
 		Server::sharedMemory.waitForUpdateFlags();
+
+		ballAvailable = false;
+		playersAlive = false;
+		tilesAvailable = false;
+		hit = false;
 
 		for (auto &ball : gameData->balls) {
 			if (!ball.active) {
@@ -165,6 +184,9 @@ DWORD WINAPI BallManager(LPVOID args) {
 					continue;
 				}
 
+				if (tile.resistance != UNBREAKABLE)
+					tilesAvailable = true;
+
 				tileLeft = tile.posX;
 				tileRight = tile.posX + tile.width;
 				tileTop = tile.posY;
@@ -176,6 +198,10 @@ DWORD WINAPI BallManager(LPVOID args) {
 					(tileTop <= ballTop || tileBottom >= ballBottom))
 				{
 					ball.right = !ball.right;
+					hit = true;
+
+					if (tile.resistance == UNBREAKABLE)
+						break;
 
 					if (--tile.resistance == 0)
 						tile.active = false;
@@ -194,6 +220,10 @@ DWORD WINAPI BallManager(LPVOID args) {
 					(tileLeft <= ballLeft || tileRight >= ballRight))
 				{
 					ball.up = !ball.up;
+					hit = true;
+
+					if (tile.resistance == UNBREAKABLE)
+						break;
 
 					if (--tile.resistance == 0)
 						tile.active = false;
@@ -207,10 +237,20 @@ DWORD WINAPI BallManager(LPVOID args) {
 				}
 			}
 
+			if (!tilesAvailable) {
+				//TODO: Set trigger event
+				break;
+			}
+
+			if (hit)
+				continue;
+
 			for (auto &player : gameData->players) {
 				if (!player.active || player.lives == 0) {
 					continue;
 				}
+
+				playersAlive = true;
 
 				playerLeft = player.posX;
 				playerRight = player.posX + player.width;
@@ -235,6 +275,11 @@ DWORD WINAPI BallManager(LPVOID args) {
 				}
 			}
 
+			if (!playersAlive) {
+				//TODO: Set trigger event
+				break;
+			}
+
 			//Verify if ball is in one of the of the limits, so it can change position
 			if (ball.posX == MAX_WIDTH || ball.posX == MIN_WIDTH) {
 				ball.right = !ball.right;
@@ -257,7 +302,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 			if (ball.active)
 				ballAvailable = true;
 		}
-
+		//If theres no balls available, check for palyers with lives so another ball can spawn
 		if (!ballAvailable) {
 			for (auto & player : gameData->players) {
 				if (player.active) {
@@ -275,6 +320,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
+			//TODO: Trigger event for this
 			break;
 		}
 	}
