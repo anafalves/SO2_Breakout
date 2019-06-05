@@ -8,7 +8,11 @@ GameDataManager::GameDataManager(GameData * gdata) {
 	{
 		throw 1;
 	}
-	//TODO: initialize values such as default sizes for field, e.g. width and height, etc
+
+	hGameEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (hGameEvent == NULL) {
+		throw 2;
+	}
 }
 
 void GameDataManager::lockAccessGameData() {
@@ -19,66 +23,49 @@ void GameDataManager::releaseAccessGameData() {
 	ReleaseMutex(hAccessMutex);
 }
 
+void GameDataManager::setGameEvent() {
+	SetEvent(hGameEvent);
+}
+
+void GameDataManager::waitForGameEvent() {
+	HANDLE game[2];
+
+	game[0] = hGameEvent;
+	game[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, game, FALSE, INFINITE);
+}
+
 GameData * GameDataManager::getGameData() {
 	return gameData;
 }
 
 void GameDataManager::setupGameStart()
 {
+	SecureZeroMemory(gameData, sizeof(GameData));
+
 	setupBall();
-	setupTiles();
+	setupPlayers();
 
+}
 
-	////Ball Init
-	//for (auto &x : viewGameData->balls) {
-	//	x.active = false;
-	//	x.posX = 0;
-	//	x.posY = 0;
-	//	x.width = 0;
-	//	x.height = 0;
-	//}
-
-	////Tile Init
-	//for (auto &x : viewGameData->tiles) {
-	//	x.active = false;
-	//	x.bonus = false;
-	//	x.resistance = 0;
-	//	x.posX = 0;
-	//	x.posY = 0;
-	//	x.width = 0;
-	//	x.height = 0;
-	//}
-
-	////Bonuses init
-	//for (auto &x : viewGameData->bonuses) {
-	//	x.active = false;
-	//	x.type = 0;
-	//	x.posX = 0;
-	//	x.posY = 0;
-	//	x.width = 0;
-	//	x.height = 0;
-	//}
-
-	////Player init
-	//for (auto &x : viewGameData->players) {
-	//	x.active = false;
-	//	x.lives = 0;
-	//	x.points = 0;
-	//	x.posX = 0;
-	//	x.posY = 0;
-	//	x.width = 0;
-	//	x.height = 0;
-	//}
+void GameDataManager::generateLevel(int difficulty) {
+	//TODO: Code here
 }
 
 void GameDataManager::setupBall() {
 	WaitForSingleObject(hAccessMutex, INFINITE);
+
+	for (auto &ball : gameData->balls) {
+		ball.active = false;
+		ball.width = BALL_DEFAULT_WIDTH;
+		ball.height = BALL_DEFAULT_HEIGHT;
+	}
+
 	//Enable and set ball [0] in the center of the screen
 	gameData->balls->active = true;
-	gameData->balls->posX = MAX_WIDTH / 2;
-	gameData->balls->posY = MAX_HEIGHT / 2;
-	gameData->balls->height = 20;
-	gameData->balls->width = 20;
+	gameData->balls->posX = MAX_GAME_WIDTH / 2;
+	gameData->balls->posY = MAX_GAME_HEIGHT / 2;
 	gameData->balls->up = false;
 	gameData->balls->right = true;
 
@@ -86,21 +73,23 @@ void GameDataManager::setupBall() {
 }
 
 void GameDataManager::setupPlayers() { //TODO: add ACTIVE players in the correct positions
+	Server::gameData.lockAccessGameData();
 
-}
-
-void GameDataManager::setupTiles() {
-	for (int i = 0; i < 10; i++) {
-		gameData->tiles[i].active = true;
-		gameData->tiles[i].resistance = 1;
-		gameData->tiles[i].bonus = NORMAL;
-		gameData->tiles[i].width = 40;
-		gameData->tiles[i].height = 20;
-		gameData->tiles[i].posX = i * 45;
-		gameData->tiles[i].posY = 300;
+	for (int i = 0; i < MAX_PLAYERS; i++) {
+		gameData->players[i].id = i;
+		gameData->players[i].height = PLAYER_DEFAULT_HEIGHT;
+		gameData->players[i].width = PLAYER_DEFAULT_WIDTH;
+		gameData->players[i].lives = Server::config.getInitialLives();
+		gameData->players[i].points = 0;
 	}
 
-	//TODO: generate random tiles? 
+	for (auto & clients : Server::clients.getClientArray()) {
+		clients->getPlayer()->active = true;
+	}
+
+	//TODO: put players in the right position regarding the size of the playing field
+
+	Server::gameData.releaseAccessGameData();
 }
 
 void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
@@ -115,7 +104,7 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 	selectedPlayerRight = selectedPlayer->posX + selectedPlayer->width;
 
 	//if it's on the edge of the world leaves without change
-	if (selectedPlayerLeft == MIN_WIDTH || selectedPlayerRight == MAX_WIDTH) {
+	if (selectedPlayerLeft == MIN_GAME_WIDTH || selectedPlayerRight == MAX_GAME_WIDTH) {
 		ReleaseMutex(hAccessMutex);
 		return;
 	}
@@ -168,11 +157,11 @@ void GameDataManager::movePlayerPrecise(Player * selectedPlayer, int x) {
 	x -= selectedPlayer->width / 2;
 	
 	//Verify if the positions are within bounds and fix them if they are not
-	if (x < MIN_WIDTH) {
-		x = MIN_WIDTH;
+	if (x < MIN_GAME_WIDTH) {
+		x = MIN_GAME_WIDTH;
 	}
-	else if (x + selectedPlayer->width > MAX_WIDTH) {
-		x -= (x + selectedPlayer->width) - MAX_WIDTH;
+	else if (x + selectedPlayer->width > MAX_GAME_WIDTH) {
+		x -= (x + selectedPlayer->width) - MAX_GAME_WIDTH;
 	}
 
 	for (const auto & player : gameData->players) {
