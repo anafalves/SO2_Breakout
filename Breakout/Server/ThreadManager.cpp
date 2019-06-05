@@ -607,6 +607,8 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 	}
 	// 5 - Once the user leaves, crashes or pipe closes/error, the thread removes the user from the pool.
 	Server::clients.removeClient(reply.id);
+	CloseHandle(readReady);
+	CloseHandle(writeReady);
 
 	return 0;
 }

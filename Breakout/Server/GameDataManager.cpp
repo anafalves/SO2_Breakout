@@ -15,6 +15,11 @@ GameDataManager::GameDataManager(GameData * gdata) {
 	}
 }
 
+GameDataManager::~GameDataManager() {
+	CloseHandle(hAccessMutex);
+	CloseHandle(hGameEvent);
+}
+
 void GameDataManager::lockAccessGameData() {
 	WaitForSingleObject(hAccessMutex, INFINITE);
 }

@@ -34,6 +34,7 @@ private:
 
 public:
 	GameDataManager(GameData * gdata);
+	~GameDataManager();
 
 	Player * getAvailablePlayer();
 	GameData * getGameData();
