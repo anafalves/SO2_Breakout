@@ -7,9 +7,10 @@ enum Constants {
 };
 
 enum GameState {
-	STARTED,
+	RUNNING,
 	GAME_OVER,
 	GAME_WON,
+	NEXT_LEVEL,
 	LOBBY
 };
 
@@ -24,8 +25,6 @@ enum BonusType {
 	LIFE,
 	TRIPLE
 };
-
-//TODO: Add enum with default sizes for objects
 
 typedef struct ball {
 	int posX;

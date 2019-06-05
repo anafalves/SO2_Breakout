@@ -29,6 +29,7 @@ class GameDataManager
 {
 private:
 	HANDLE hAccessMutex;
+	HANDLE hGameEvent;
 	GameData * gameData;
 
 public:
@@ -39,16 +40,16 @@ public:
 
 	void lockAccessGameData();
 	void releaseAccessGameData();
+	void setGameEvent();
+	void waitForGameEvent();
 
 	//Sets initial values and positions of things, such as ball, players, etc.
 	void setupGameStart();
 
-	void generateLevel(int difficulty);
-	
+	void generateLevel(int difficulty);//TODO: create this function
 
 	void setupBall();
-	void setupPlayers();
-	void setupTiles();
+	void setupPlayers(); //TODO: needs to be coded
 	//TODO: make random stuff spawn and add handle to tell u when to start
 
 	void movePlayer(Player * player, int direction);

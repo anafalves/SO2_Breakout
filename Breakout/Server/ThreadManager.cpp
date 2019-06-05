@@ -96,17 +96,6 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 	return 0;
 }
 
-DWORD WINAPI Game(LPVOID args) {
-
-	//Algorithm
-	// 1 - Run though users and make them active.
-	// 2 - 
-
-	//TODO: Create GameData Initializer
-	//TODO: Create user setup function
-
-}
-
 DWORD WINAPI BallManager(LPVOID args) {
 	HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
@@ -134,9 +123,6 @@ DWORD WINAPI BallManager(LPVOID args) {
 		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
 		return -1;
 	}
-
-	Server::gameData.setupGameStart();
-	//TODO: sperar pelo sem�foro / mutex de inicio do jogo para poder avan�ar
 
 	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
 		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
@@ -238,7 +224,8 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			if (!tilesAvailable) {
-				//TODO: Set trigger event
+				gameData->gameState = NEXT_LEVEL;
+				Server::gameData.setGameEvent();
 				break;
 			}
 
@@ -276,20 +263,21 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			if (!playersAlive) {
-				//TODO: Set trigger event
+				gameData->gameState = GAME_OVER;
+				Server::gameData.setGameEvent();
 				break;
 			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
-			if (ball.posX == MAX_WIDTH || ball.posX == MIN_WIDTH) {
+			if (ball.posX == MAX_GAME_WIDTH || ball.posX == MIN_GAME_WIDTH) {
 				ball.right = !ball.right;
 			}
 
-			if (ball.posY == MAX_HEIGHT) {
+			if (ball.posY == MAX_GAME_HEIGHT) {
 				ball.up = !ball.up;
 			}
 
-			if (ball.posY == MIN_HEIGHT) {
+			if (ball.posY == MIN_GAME_HEIGHT) {
 				ball.active = false;
 				gameData->players[ball.playerId].lives--;
 			}
@@ -320,9 +308,10 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
-			//TODO: Trigger event for this
-			break;
 		}
+
+		if (gameData->gameState != RUNNING)
+			break;
 	}
 
 	tcout << "Ball Thread Ended" << endl;
@@ -331,6 +320,34 @@ DWORD WINAPI BallManager(LPVOID args) {
 	return 0;
 }
 
+DWORD WINAPI GameThread(LPVOID args) {
+	int difficulty = 0;
+	GameData * gameData = Server::gameData.getGameData();
+
+	while (true) {
+		// 1 - Position users
+		//If there are no clients, stop the thread.
+		if (Server::clients.getClientArray().size() == 0)
+			return -1;
+
+		Server::gameData.setupPlayers(); //TODO: this does nothing atm, needs to be coded.
+		// 2 - Generate map
+		Server::gameData.generateLevel(difficulty); //TODO: needs to be coded, this is doing nothing atm.
+		// 3 - Start ball thread
+		Server::threadManager.startBallThread();
+		// 4 - wait for gameEvent
+		Server::gameData.waitForGameEvent();
+		if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
+			Server::threadManager.waitForBallThread();
+			continue; //Create a new level and all that great stuff
+		}
+		else { //if it's anyting else, then just quits
+			return 0; //take a look at this
+		}
+	}
+
+	return 0;
+}
 
 DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	bool * CONTINUE = (bool *)args;
