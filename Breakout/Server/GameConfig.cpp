@@ -5,12 +5,16 @@ GameConfig::GameConfig()
 	levelCount(DEFAULT_LEVEL_COUNT), speedUpCount(DEFAULT_SPEEDUP_COUNT), 
 	slowDownCount(DEFAULT_SLOWDOWN_COUNT), initialLives(DEFAULT_LIVES_COUNT), 
 	initialTileCount(DEFAULT_TILE_COUNT), movementSpeed(DEFAULT_MOVEMENT_SPEED), 
-	bonusDropRate(DEFAULT_BONUS_RATE / 100.0)
+	bonusDropRate(DEFAULT_BONUS_RATE / 100.0), ballTripleCount(DEFAULT_TRIPLE_COUNT)
 {}
 
 //Getters
 int GameConfig::getInitialLives() const {
 	return initialLives;
+}
+
+int GameConfig::getBallTripleCount() const {
+	return ballTripleCount;
 }
 
 int GameConfig::getInitialTileCount() const {
@@ -48,6 +52,14 @@ bool GameConfig::setInitialLives(int lives) {
 		return false;
 
 	initialLives = lives;
+	return true;
+}
+
+bool GameConfig::setBallTripleCount(int count) {
+	if (count < 0)
+		return false;
+
+	ballTripleCount = count;
 	return true;
 }
 

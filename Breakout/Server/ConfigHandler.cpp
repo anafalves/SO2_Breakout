@@ -91,4 +91,11 @@ void ConfigHandler::handleCommand(tstring command, tstring value) {
 			config.setInitialTileCount(convertedValue);
 		}
 	}
+	else if (command == CommandConstants::ballTripleBonus)
+	{
+		tss >> convertedValue;
+		if (!tss.fail()) {
+			config.setBallTripleCount(convertedValue);
+		}
+	}
 }

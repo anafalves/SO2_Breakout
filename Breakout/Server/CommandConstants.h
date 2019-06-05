@@ -16,5 +16,6 @@ struct CommandConstants
 	static const tstring tileCount;
 	static const tstring movementSpeed;
 	static const tstring bonusDropRate;
+	static const tstring ballTripleBonus;
 };
 

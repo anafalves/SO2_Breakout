@@ -8,3 +8,4 @@ const tstring CommandConstants::playerCount		= TEXT("max_jogadores");
 const tstring CommandConstants::slowDown		= TEXT("slowdowns");
 const tstring CommandConstants::speedUp			= TEXT("speedups");
 const tstring CommandConstants::tileCount		= TEXT("tijolos_iniciais");
+const tstring CommandConstants::ballTripleBonus = TEXT("bonus_bola");

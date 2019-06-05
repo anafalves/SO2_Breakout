@@ -18,6 +18,7 @@ enum GameConfigDefaults {
 	DEFAULT_TILE_COUNT = 80,
 	DEFAULT_MOVEMENT_SPEED = 10,
 	DEFAULT_BONUS_RATE = 25,
+	DEFAULT_TRIPLE_COUNT = 5,
 };
 
 class GameConfig {
@@ -30,6 +31,7 @@ private:
 	int initialLives;
 	int initialTileCount;
 	int movementSpeed;
+	int ballTripleCount;
 	double bonusDropRate;
 
 public:
@@ -42,6 +44,7 @@ public:
 	int getInitialLives() const;
 	int getInitialTileCount() const;
 	int getMovementSpeed() const;
+	int getBallTripleCount() const;
 	double getBonusDropRate() const;
 
 	bool setInitialLives(int lives);
@@ -51,6 +54,7 @@ public:
 	bool setMovementSpeed(int speed);
 	bool setSlowDownCount(int count);
 	bool setSpeedUpCount(int count);
+	bool setBallTripleCount(int count);
 	bool setBonusDropRate(double rate);
 };
 
