@@ -9,6 +9,7 @@
 #define tstringstream wstringstream
 #define tistringstream wistringstream
 #define tostringstream wostringstream
+#define tto_string to_wstring
 #else
 #define tcout cout
 #define tcin cin
@@ -19,4 +20,5 @@
 #define tstringstream stringstream
 #define tistringstream istringstream
 #define tostringstream ostringstream
+#define tto_string to_string
 #endif

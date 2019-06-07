@@ -5,12 +5,10 @@ class RemoteClient : public Client
 private:
 	HANDLE hPipe;
 	HANDLE hPipeGameData;
+	HANDLE hWriteReady;
 
 public:
-	RemoteClient(tstring username, Player * p, HANDLE pipe, HANDLE hGamedata)
-		:Client(username, p), hPipe(pipe), hPipeGameData(hGamedata)
-	{
-	}
+	RemoteClient(tstring username, Player * p, HANDLE pipe, HANDLE hGamedata);
 
 	void sendUpdate();
 

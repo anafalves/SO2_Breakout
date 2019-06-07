@@ -9,13 +9,23 @@ RemoteClient::RemoteClient()
 
 	ipAddress = new tstring();
 
-	hExitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	hExitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (hExitEvent == NULL) {
 		throw EXCEPTION_ACCESS_VIOLATION;
 	}
 
-	hWriteMutex = CreateMutex(NULL, FALSE, NULL);
-	if (hWriteMutex == NULL) {
+	hWriteReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (hWriteReady == INVALID_HANDLE_VALUE) {
+		throw EXCEPTION_ACCESS_VIOLATION;
+	}
+	
+	hReadReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (hReadReady == INVALID_HANDLE_VALUE) {
+		throw EXCEPTION_ACCESS_VIOLATION;
+	}
+	
+	hReadGameDataReady = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (hReadGameDataReady == INVALID_HANDLE_VALUE) {
 		throw EXCEPTION_ACCESS_VIOLATION;
 	}
 }
@@ -61,30 +71,38 @@ bool RemoteClient::connect(TCHAR * ipAddr) {
 }
 
 bool RemoteClient::sendMessage(ClientMsg message) {
-	HANDLE write[2] = { hWriteMutex, hExitEvent };
+	HANDLE writeReady[2] = { hWriteReady, hExitEvent };
+	OVERLAPPED flag = { 0 };
 	DWORD nBytes = 0;
-	bool success = false;
-	//TODO: add overlapped IO operations here
-	WaitForMultipleObjects(2, write, FALSE, INFINITE);
 
-	success = WriteFile(hPipeMessage, &message, sizeof(ClientMsg), &nBytes, NULL);
-	if (!success || nBytes != sizeof(ClientMsg)) {
+	ResetEvent(hWriteReady);
+	flag.hEvent = hWriteReady;
+
+	WriteFile(hPipeMessage, &message, sizeof(ClientMsg), &nBytes, &flag);
+	WaitForMultipleObjects(2, writeReady, FALSE, INFINITE);
+
+	GetOverlappedResult(hPipeMessage, &flag, &nBytes, FALSE);
+	if (nBytes != sizeof(ClientMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
 		return false;
 	}
-
-	ReleaseMutex(hWriteMutex);
 
 	return true;
 }
 
 ServerMsg RemoteClient::receiveMessage() {
+	HANDLE readReady[2] = { hReadReady, hExitEvent };
+	OVERLAPPED flag = { 0 };
 	DWORD nBytes = 0;
 	ServerMsg response;
-	bool success = false;
 
-	//TODO: add overlapped IO operations here
-	success = ReadFile(hPipeMessage, &response, sizeof(ServerMsg), &nBytes, NULL);
-	if (!success || nBytes != sizeof(ServerMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
+	ResetEvent(hReadReady);
+	flag.hEvent = hReadReady;
+
+	ReadFile(hPipeMessage, &response, sizeof(ServerMsg), &nBytes, &flag);
+	WaitForMultipleObjects(2, readReady, FALSE, INFINITE);
+
+	GetOverlappedResult(hPipeMessage, &flag, &nBytes, FALSE);
+	if (nBytes != sizeof(ServerMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
 		response.type = -1;
 	}
 
@@ -139,7 +157,7 @@ int RemoteClient::login(TCHAR * name) {
 	_tcscpy_s(request.message.name, name);
 
 	if (!sendMessage(request)) {
-		return false;
+		return CONNECTION_ERROR;
 	}
 
 	response = receiveMessage();
@@ -163,14 +181,20 @@ int RemoteClient::login(TCHAR * name) {
 }
 
 GameData RemoteClient::receiveBroadcast() {
+	HANDLE readReady[2] = { hReadGameDataReady, hExitEvent };
+	OVERLAPPED flag = { 0 };
 	DWORD nBytes = 0;
 	GameData data;
-	bool success = false;
 
-	//TODO: make this return false or something in case it fails due to pipe.
-	success = ReadFile(hPipeGameData, &data, sizeof(GameData), &nBytes, NULL);
-	if (!success || nBytes != sizeof(GameData) || GetLastError() == ERROR_BROKEN_PIPE) {
-		data.balls[0].playerId = -1; //TODO: set game state here
+	ResetEvent(hReadGameDataReady);
+	flag.hEvent = hReadGameDataReady;
+
+	ReadFile(hPipeGameData, &data, sizeof(GameData), &nBytes, &flag);
+	WaitForMultipleObjects(2, readReady, FALSE, INFINITE);
+
+	GetOverlappedResult(hPipeGameData, &flag, &nBytes, FALSE);
+	if (nBytes != sizeof(GameData) || GetLastError() == ERROR_BROKEN_PIPE) {
+		data.gameState = -1;
 	}
 
 	return data;
@@ -178,10 +202,14 @@ GameData RemoteClient::receiveBroadcast() {
 
 RemoteClient::~RemoteClient() {
 	delete ipAddress;
+	SetEvent(hExitEvent);
 	FlushFileBuffers(hPipeMessage);
 	FlushFileBuffers(hPipeGameData);
 	DisconnectNamedPipe(hPipeMessage);
 	DisconnectNamedPipe(hPipeGameData);
 	CloseHandle(hPipeMessage);
 	CloseHandle(hPipeGameData);
+	CloseHandle(hWriteReady);
+	CloseHandle(hReadReady);
+	CloseHandle(hReadGameDataReady);
 }
