@@ -5,12 +5,15 @@
 class CLIENT_API RemoteClient : public Client
 {
 private:
-	HANDLE hWriteMutex;
 	HANDLE hExitEvent;
 
 	tstring * ipAddress;
 	HANDLE hPipeMessage;
 	HANDLE hPipeGameData;
+
+	HANDLE hReadReady;
+	HANDLE hWriteReady;
+	HANDLE hReadGameDataReady;
 
 	bool connectToGameDataPipe(TCHAR * name);
 
