@@ -11,6 +11,7 @@ private:
 	HANDLE hServerBuffer;
 	HANDLE hClientBuffer;
 
+	bool ready;
 	void initSharedMemory();
 	void initSyncVariables();
 
@@ -32,6 +33,7 @@ public:
 	HANDLE hClientReadMutex;
 
 	bool getUpdateFlag(int id);
+	bool isReady() const;
 	SharedMemoryManager();
 	~SharedMemoryManager();
 };

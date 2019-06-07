@@ -62,6 +62,7 @@ bool ClientManager::removeClient(std::tstring name) {
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getName() == name) {
 			clients.erase(clients.begin() + i);
+			ReleaseMutex(hClientMutex);
 			return true;
 		}
 	}
@@ -83,6 +84,7 @@ bool ClientManager::removeClient(int id) {
 		if (clients[i]->getId() == id) {
 			delete clients[i];
 			clients.erase(clients.begin() + i);
+			ReleaseMutex(hClientMutex);
 			return true;
 		}
 	}
@@ -117,6 +119,7 @@ bool ClientManager::isNameAvailable(std::tstring name) const {
 
 	for (const auto &client : clients) {
 		if (client->getName() == name) {
+			ReleaseMutex(hClientMutex);
 			return false;
 		}
 	}

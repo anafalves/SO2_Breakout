@@ -8,7 +8,7 @@ private:
 	HANDLE hWriteMutex;
 	HANDLE hExitEvent;
 
-	tstring ipAddress;
+	tstring * ipAddress;
 	HANDLE hPipeMessage;
 	HANDLE hPipeGameData;
 
@@ -18,7 +18,7 @@ public:
 	RemoteClient();
 	bool isConnected();
 	bool connect(TCHAR * ipAddr);
-	bool login(TCHAR * name);
+	int login(TCHAR * name);
 	GameData receiveBroadcast();
 	bool sendMessage(ClientMsg message);
 	ServerMsg receiveMessage();

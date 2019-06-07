@@ -7,7 +7,7 @@ enum GamePoints {
 
 DWORD WINAPI BonusHandler(LPVOID args) {
 
-	GameData * gameData = Server::gameData.getGameData();
+	GameData * gameData = Server::gameData->getGameData();
 	Bonus * bonus = nullptr;
 	HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
@@ -28,7 +28,7 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 		return -1;
 	}
 
-	Server::gameData.lockAccessGameData();
+	Server::gameData->lockAccessGameData();
 	Server::sharedMemory.waitForUpdateFlags();
 
 	for (auto & b : gameData->bonuses) {
@@ -40,7 +40,7 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 		}
 	}
 	Server::sharedMemory.setUpdate();
-	Server::gameData.releaseAccessGameData();
+	Server::gameData->releaseAccessGameData();
 
 	if (bonus == nullptr)
 		return 1;
@@ -48,7 +48,7 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 	while (bonus->active) {
 		WaitForSingleObject(hTimer, INFINITE);
 
-		Server::gameData.lockAccessGameData();
+		Server::gameData->lockAccessGameData();
 		Server::sharedMemory.waitForUpdateFlags();
 
 		bonus->posY += Server::config.getMovementSpeed();
@@ -84,13 +84,13 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 				}
 
 				bonus->active = false;
-				Server::gameData.releaseAccessGameData();
+				Server::gameData->releaseAccessGameData();
 				Server::sharedMemory.setUpdate();
 				return 0;
 			}
 		}
 		Server::sharedMemory.setUpdate();
-		Server::gameData.releaseAccessGameData();
+		Server::gameData->releaseAccessGameData();
 	}
 
 	return 0;
@@ -113,7 +113,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 	bool * CONTINUE = (bool *)args;
 
 	*CONTINUE = true;
-	gameData = Server::gameData.getGameData();
+	gameData = Server::gameData->getGameData();
 	liDueTime.QuadPart = 100LL;
 
 	// Create an unnamed waitable timer.
@@ -132,7 +132,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 	while (*CONTINUE)
 	{
 		WaitForSingleObject(hTimer, INFINITE);
-		Server::gameData.lockAccessGameData();
+		Server::gameData->lockAccessGameData();
 		Server::sharedMemory.waitForUpdateFlags();
 
 		ballAvailable = false;
@@ -225,7 +225,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 			if (!tilesAvailable) {
 				gameData->gameState = NEXT_LEVEL;
-				Server::gameData.setGameEvent();
+				Server::gameData->setGameEvent();
 				break;
 			}
 
@@ -264,7 +264,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 			if (!playersAlive) {
 				gameData->gameState = GAME_OVER;
-				Server::gameData.setGameEvent();
+				Server::gameData->setGameEvent();
 				break;
 			}
 
@@ -295,7 +295,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 			for (auto & player : gameData->players) {
 				if (player.active) {
 					if (player.lives > 0) {
-						Server::gameData.setupBall();
+						Server::gameData->setupBall();
 						ballAvailable = true;
 						break;
 					}
@@ -304,7 +304,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 		}
 
 		Server::sharedMemory.setUpdate();
-		Server::gameData.releaseAccessGameData();
+		Server::gameData->releaseAccessGameData();
 
 		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
@@ -322,7 +322,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 DWORD WINAPI GameThread(LPVOID args) {
 	int difficulty = 0;
-	GameData * gameData = Server::gameData.getGameData();
+	GameData * gameData = Server::gameData->getGameData();
 
 	while (true) {
 		// 1 - Position users
@@ -330,13 +330,13 @@ DWORD WINAPI GameThread(LPVOID args) {
 		if (Server::clients.getClientArray().size() == 0)
 			return -1;
 
-		Server::gameData.setupPlayers(); //TODO: this does nothing atm, needs to be coded.
+		Server::gameData->setupPlayers(); //TODO: this does nothing atm, needs to be coded.
 		// 2 - Generate map
-		Server::gameData.generateLevel(difficulty); //TODO: needs to be coded, this is doing nothing atm.
+		Server::gameData->generateLevel(difficulty); //TODO: needs to be coded, this is doing nothing atm.
 		// 3 - Start ball thread
 		Server::threadManager.startBallThread();
 		// 4 - wait for gameEvent
-		Server::gameData.waitForGameEvent();
+		Server::gameData->waitForGameEvent();
 		if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
 			Server::threadManager.waitForBallThread();
 			continue; //Create a new level and all that great stuff
@@ -366,18 +366,23 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 		switch (request.type) {
 			case MOVE:
 				player = Server::clients.getClientPlayer(request.id);
+				if (player == nullptr)
+					break;
+
 				if(player->lives > 0)
-					Server::gameData.movePlayer(player, request.message.basicMove);
+					Server::gameData->movePlayer(player, request.message.basicMove);
 				break;
 
 			case PRECISE_MOVE:
 				player = Server::clients.getClientPlayer(request.id);
+				if (player == nullptr)
+					break;
+
 				if (player->lives > 0)
-					Server::gameData.movePlayerPrecise(player, request.message.preciseMove);
+					Server::gameData->movePlayerPrecise(player, request.message.preciseMove);
 				break;
 
 			case TOP10:
-				//Send top 10 back
 				reply.type = TOP10;
 				reply.message.top10 = Server::topPlayers.getTop10();
 				Server::sharedMemory.writeMessage(reply);
@@ -391,9 +396,9 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 					reply.type = DENY_USERNAME;
 				}
 				else {
-					player = Server::gameData.getAvailablePlayer();
+					player = Server::gameData->getAvailablePlayer();
 					if (player == nullptr) {
-						tcout << "Something went wront while trying to get a pointer to an available player while there's still room." << endl;
+						tcout << "Something went wrong while trying to get a pointer to an available player while there's still room." << endl;
 						ACTIVE = false;
 						reply.type = DENY_SERVER_FULL;
 						Server::sharedMemory.writeMessage(reply);
@@ -406,7 +411,6 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 						Server::sharedMemory.writeMessage(reply);
 						break;
 					}
-
 					Server::clients.AddClient(request.message.name, player, flag, reply.id);
 					
 					reply.type = ACCEPT;
@@ -425,7 +429,6 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 		}//End of switch
 	}//End of while
 
-	Server::clients.removeClient(request.id);
 	tcout << "Local client Handler thread ended" << endl;
 
 	return 0;
@@ -518,9 +521,19 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 
 		switch (request.type) {
 			case MOVE:
+				if (player == nullptr)
+					break;
+
+				if (player->lives > 0)
+					Server::gameData->movePlayer(player, request.message.basicMove);
 				break;
 
 			case PRECISE_MOVE:
+				if (player == nullptr)
+					break;
+
+				if (player->lives > 0)
+					Server::gameData->movePlayerPrecise(player, request.message.preciseMove);
 				break;
 
 			case TOP10:
@@ -534,7 +547,6 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 			case LOGIN:
 			{
 				HANDLE hGameDataPipe;
-				bool clientConnected = false;
 				tstring pipeName = TEXT("\\\\.\\");
 
 				if (!Server::clients.hasRoom()) {
@@ -550,9 +562,11 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 						ACTIVE = false;
 						break;
 					}
+					break;
 				}
-				else {
-					player = Server::gameData.getAvailablePlayer();
+				else 
+				{
+					player = Server::gameData->getAvailablePlayer();
 					if (player == nullptr) {
 						tcout << "Something went wront while trying to get a pointer to an available player while there's still room." << endl;
 						ACTIVE = false;
@@ -564,11 +578,10 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 					pipeName += PipeConstants::GAMEDATA_PIPE_NAME.c_str();
 					pipeName += request.message.name;
 
-					tcout << "opening gamedata pipe to client :" << pipeName << endl;
-
 					hGameDataPipe = CreateNamedPipe(
 						pipeName.c_str(),
-						PIPE_ACCESS_DUPLEX,
+						PIPE_ACCESS_DUPLEX |
+						FILE_FLAG_OVERLAPPED,
 						PIPE_TYPE_MESSAGE |
 						PIPE_READMODE_MESSAGE |
 						PIPE_WAIT,
@@ -593,10 +606,13 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 						ACTIVE = false;
 						break;
 					}
+					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 
 					Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
+					player = Server::clients.getClientPlayer(reply.id);
 					break;
 				}
+				break;
 			} //End of Login case
 
 			case LEAVE:
@@ -815,32 +831,23 @@ void ThreadManager::waitForRemoteConnectionThread() {
 	);
 
 	CloseHandle(hPipeMessage);
-
 	WaitForSingleObject(hRemoteConnectionHandler, INFINITE);
-	CloseHandle(hBroadcastThread);
 }
 
 void ThreadManager::waitForGameDataBroadcaster() {
 	WaitForSingleObject(hBroadcastThread, INFINITE);
-	CloseHandle(hBroadcastThread);
 }
 
 void ThreadManager::waitForLocalClientThread() {
 	WaitForSingleObject(hLocalClientHandler, INFINITE);
-	CloseHandle(hLocalClientHandler);
 }
 
 void ThreadManager::waitForBallThread() {
 	WaitForSingleObject(hBallThread, INFINITE);
-	CloseHandle(hBallThread);
 }
 
 void ThreadManager::waitForBonusesThreads() {
 	if (hBonuses.size() > 0) {
 		WaitForMultipleObjects(hBonuses.size(), hBonuses.data(), TRUE, INFINITE);
-	}
-	 
-	for (auto & thread : hBonuses) {
-		CloseHandle(thread);
 	}
 };

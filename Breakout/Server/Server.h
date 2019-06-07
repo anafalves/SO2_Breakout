@@ -40,7 +40,7 @@ public:
 	static ClientManager clients;
 	static SharedMemoryManager sharedMemory;
 	static ThreadManager threadManager;
-	static GameDataManager gameData;
+	static GameDataManager * gameData;
 
 	static int startServer(tstring fileName);
 	static void exitServer();

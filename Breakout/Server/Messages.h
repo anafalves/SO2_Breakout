@@ -10,7 +10,6 @@ enum ServerMessages {
 	DENY_USERNAME,
 	DENY_SERVER_FULL,
 	CLOSE,
-	DENY_SPECTATOR,
 	TOP10 = 100,
 	//GAMEDATA,
 };
@@ -20,7 +19,6 @@ enum ClientMessages {
 	LEAVE,
 	MOVE,
 	PRECISE_MOVE,
-	SPECTATOR,
 	//READY
 };
 

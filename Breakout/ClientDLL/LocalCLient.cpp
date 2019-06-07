@@ -1,6 +1,7 @@
 #include "LocalCLient.h"
+#include "Communication.h"
 
-bool LocalCLient::login(TCHAR * name)
+int LocalCLient::login(TCHAR * name)
 {
 	ClientMsg msg;
 	ServerMsg answer;
@@ -15,28 +16,35 @@ bool LocalCLient::login(TCHAR * name)
 		setClientID(answer.id);
 		setUpdateId(answer.update_id);
 
-		if (sharedMemmoryContent.getUpdateFlag(update_id) == false) {
+		if (sharedMemmoryContent->getUpdateFlag(update_id) == false) {
 			msg.type = LEAVE;
 			sendMessage(msg);
-			return false;
+			return CONNECTION_ERROR;
 		}
 
-		return true;
-	}//TODO: return the server answer aproprietly, no server, server full, change name
-	return false;
+		return CONNECTED;
+	}
+	else if (answer.type == DENY_SERVER_FULL) {
+		return SERVER_FULL;
+	}
+	else if (answer.type == DENY_USERNAME) {
+		return INVALID_USERNAME;
+	}
+	else 
+		return CONNECTION_TIMED_OUT;
 }
 
 GameData LocalCLient::receiveBroadcast() {
 	HANDLE update[2];
 	GameData data;
 
-	update[0] = sharedMemmoryContent.hUpdateEvent;
-	update[1] = sharedMemmoryContent.hExitEvent;
+	update[0] = sharedMemmoryContent->hUpdateEvent;
+	update[1] = sharedMemmoryContent->hExitEvent;
 
-	SetEvent(sharedMemmoryContent.hReadyForUpdate);
+	SetEvent(sharedMemmoryContent->hReadyForUpdate);
 	WaitForMultipleObjects(2, update, FALSE, INFINITE);
-	data = (*sharedMemmoryContent.viewGameData);
-	SetEvent(sharedMemmoryContent.hReadyForUpdate);
+	data = (*sharedMemmoryContent->viewGameData);
+	SetEvent(sharedMemmoryContent->hReadyForUpdate);
 	
 	return data;
 }
@@ -46,20 +54,21 @@ bool LocalCLient::sendMessage(ClientMsg msg)
 	HANDLE write[2];
 	HANDLE empty[2];
 
-	write[0] = sharedMemmoryContent.hClientSemEmpty;
-	write[1] = sharedMemmoryContent.hExitEvent;
-	empty[0] = sharedMemmoryContent.hClientWriteMutex;
-	empty[1] = sharedMemmoryContent.hExitEvent;
+	write[0] = sharedMemmoryContent->hClientWriteMutex;
+	write[1] = sharedMemmoryContent->hExitEvent;
+
+	empty[0] = sharedMemmoryContent->hClientSemEmpty;
+	empty[1] = sharedMemmoryContent->hExitEvent;
 
 	WaitForMultipleObjects(2, empty, FALSE, INFINITE);
 	WaitForMultipleObjects(2, write, FALSE, INFINITE);
 
-	sharedMemmoryContent.viewClientBuffer->buffer[sharedMemmoryContent.viewClientBuffer->write_pos] = msg;
-	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos + 1;
-	sharedMemmoryContent.viewClientBuffer->write_pos = sharedMemmoryContent.viewClientBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
+	sharedMemmoryContent->viewClientBuffer->buffer[sharedMemmoryContent->viewClientBuffer->write_pos] = msg;
+	sharedMemmoryContent->viewClientBuffer->write_pos = sharedMemmoryContent->viewClientBuffer->write_pos + 1;
+	sharedMemmoryContent->viewClientBuffer->write_pos = sharedMemmoryContent->viewClientBuffer->write_pos % MAX_MESSAGE_BUFFER_SIZE;
 
-	ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
-	ReleaseMutex(sharedMemmoryContent.hClientWriteMutex);
+	ReleaseSemaphore(sharedMemmoryContent->hClientSemFilled, 1, NULL);
+	ReleaseMutex(sharedMemmoryContent->hClientWriteMutex);
 
 	return true;
 }
@@ -70,27 +79,27 @@ ServerMsg LocalCLient::receiveMessage() {
 	HANDLE full[2];
 	HANDLE read[2];
 
-	full[0] = sharedMemmoryContent.hServerSemFilled;
-	full[1] = sharedMemmoryContent.hExitEvent;
-	read[0] = sharedMemmoryContent.hClientReadMutex;
-	read[1] = sharedMemmoryContent.hExitEvent;
+	full[0] = sharedMemmoryContent->hServerSemFilled;
+	full[1] = sharedMemmoryContent->hExitEvent;
+	read[0] = sharedMemmoryContent->hClientReadMutex;
+	read[1] = sharedMemmoryContent->hExitEvent;
 
 	while (true) {
 		WaitForMultipleObjects(2, full, FALSE, INFINITE);
 		WaitForMultipleObjects(2, read, FALSE, INFINITE);
 
-		msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
+		msg = sharedMemmoryContent->viewServerBuffer->buffer[sharedMemmoryContent->viewServerBuffer->read_pos];
 		if (msg.id == getClientID()) {
-			sharedMemmoryContent.viewServerBuffer->read_pos++;
-			sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+			sharedMemmoryContent->viewServerBuffer->read_pos++;
+			sharedMemmoryContent->viewServerBuffer->read_pos = sharedMemmoryContent->viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
 
-			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-			ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+			ReleaseMutex(sharedMemmoryContent->hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent->hServerSemEmpty, 1, NULL);
 			break;
 		}
 		else {
-			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-			ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+			ReleaseMutex(sharedMemmoryContent->hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent->hClientSemFilled, 1, NULL);
 		}
 	}
 
@@ -107,11 +116,11 @@ ServerMsg LocalCLient::receiveMessageLogin(tstring name)
 	HANDLE full[2];
 	HANDLE read[2];
 
-	full[0] = sharedMemmoryContent.hServerSemFilled;
-	full[1] = sharedMemmoryContent.hExitEvent;
+	full[0] = sharedMemmoryContent->hServerSemFilled;
+	full[1] = sharedMemmoryContent->hExitEvent;
 
-	read[0] = sharedMemmoryContent.hClientReadMutex;
-	read[1] = sharedMemmoryContent.hExitEvent;
+	read[0] = sharedMemmoryContent->hClientReadMutex;
+	read[1] = sharedMemmoryContent->hExitEvent;
 
 	while (true) {
 		dWaitResult = WaitForMultipleObjects(2, full, FALSE, timeOut);
@@ -122,23 +131,35 @@ ServerMsg LocalCLient::receiveMessageLogin(tstring name)
 
 		WaitForMultipleObjects(2, read, FALSE, INFINITE);
 
-		msg = sharedMemmoryContent.viewServerBuffer->buffer[sharedMemmoryContent.viewServerBuffer->read_pos];
+		msg = sharedMemmoryContent->viewServerBuffer->buffer[sharedMemmoryContent->viewServerBuffer->read_pos];
 
 		if (name == msg.message.receiver) {
-			sharedMemmoryContent.viewServerBuffer->read_pos++;
-			sharedMemmoryContent.viewServerBuffer->read_pos = sharedMemmoryContent.viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
+			sharedMemmoryContent->viewServerBuffer->read_pos++;
+			sharedMemmoryContent->viewServerBuffer->read_pos = sharedMemmoryContent->viewServerBuffer->read_pos % MAX_MESSAGE_BUFFER_SIZE;
 
-			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-			ReleaseSemaphore(sharedMemmoryContent.hServerSemEmpty, 1, NULL);
+			ReleaseMutex(sharedMemmoryContent->hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent->hServerSemEmpty, 1, NULL);
 			break;
 		}
 		else {
-			ReleaseMutex(sharedMemmoryContent.hClientReadMutex);
-			ReleaseSemaphore(sharedMemmoryContent.hClientSemFilled, 1, NULL);
+			ReleaseMutex(sharedMemmoryContent->hClientReadMutex);
+			ReleaseSemaphore(sharedMemmoryContent->hClientSemFilled, 1, NULL);
 		}
 	}
 
 	return msg;
+}
+
+LocalCLient::LocalCLient()
+	:Client()
+{
+	sharedMemmoryContent = new SharedMemoryManager();
+	update_id = 0;
+}
+
+LocalCLient::~LocalCLient()
+{
+	delete sharedMemmoryContent;
 }
 
 void LocalCLient::setUpdateId(int id) {
@@ -147,4 +168,9 @@ void LocalCLient::setUpdateId(int id) {
 
 int LocalCLient::getUpdateId() const {
 	return update_id;
+}
+
+bool LocalCLient::isReady() const
+{
+	return sharedMemmoryContent->isReady();
 }

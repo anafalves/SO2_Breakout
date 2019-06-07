@@ -80,7 +80,7 @@
 
 	//TODO: create a class to start this up
 
-	if (client->login(argv[1])) {
+	/*if (client->login(argv[1])) {
 		tcout << "login accepted" << endl;
 		thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)receiveBallUpdates, NULL, 0, NULL);
 	}
@@ -94,5 +94,5 @@
 	WaitForSingleObject(thread, INFINITE);
 	CloseHandle(alreadyRunning);
 
-	return 0;
-}
+	return 0;*/
+//}
