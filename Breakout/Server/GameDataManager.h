@@ -50,8 +50,13 @@ public:
 	void generateLevel(int difficulty);//TODO: create this function
 
 	void setupBall();
-	void setupPlayers(); //TODO: needs to be coded
+	void setupTiles();
+	void setupPlayers(int difficulty); //TODO: needs to be coded
 	//TODO: make random stuff spawn and add handle to tell u when to start
+
+	void setupTiles(int difficulty);
+
+	void setupPlayers();
 
 	void movePlayer(Player * player, int direction);
 	void movePlayerPrecise(Player * player, int x);
