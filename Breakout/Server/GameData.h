@@ -55,7 +55,7 @@ typedef struct tile {
 	int width;
 	int height;
 	int resistance;
-	bool bonus;
+	int bonus;
 	bool active;
 }Tile;
 

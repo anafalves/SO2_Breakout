@@ -1,5 +1,6 @@
 #include "GameDataManager.h"
 #include "Server.h"
+#include "time.h"
 
 GameDataManager::GameDataManager(GameData * gdata) {
 	gameData = gdata;
@@ -56,6 +57,9 @@ void GameDataManager::setupGameStart()
 
 void GameDataManager::generateLevel(int difficulty) {
 	//TODO: Code here
+	//Criar os tijolos bonus
+	//Criar tijolos destrutivris 
+	//Criar os tijolos destrutiveis,
 }
 
 void GameDataManager::setupBall() {
@@ -76,9 +80,81 @@ void GameDataManager::setupBall() {
 
 	ReleaseMutex(hAccessMutex);
 }
+void retrieveCertainBonus() {
+	Server::config.getBonusDropRate();
+}
 
-void GameDataManager::setupPlayers() { //TODO: add ACTIVE players in the correct positions
+void GameDataManager::setupTiles(int difficulty) {
 	Server::gameData.lockAccessGameData();
+
+	int ocuppancyArray[18][24] = { {0} };
+	int n_undestructables;
+	int n_bonus;
+	int n_normals;
+	int x;
+	int y;
+
+	n_undestructables = 3 * difficulty + 5;
+
+	srand(time(NULL));
+
+	for (int i = 0; i < n_undestructables; i++) {
+		do {
+			x = rand() % 16 + 4;
+			y = rand() % 18;
+		} while (ocuppancyArray[x][y] != 0);
+		ocuppancyArray[x][y] = 1;
+
+		gameData->tiles[i].width = TILE_DEFAULT_WIDTH;
+		gameData->tiles[i].height = TILE_DEFAULT_HEIGHT;
+		gameData->tiles[i].active = true;
+		gameData->tiles[i].bonus = NORMAL;
+		gameData->tiles[i].resistance = UNBREAKABLE;
+		gameData->tiles[i].posX = x* TILE_DEFAULT_WIDTH;
+		gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
+	}
+	
+	n_bonus = -2 * difficulty + 40;
+	
+	for (int i = 0; i < n_bonus; i++) {
+		do {
+			x = rand() % 24;
+			y = rand() % 18;
+		} while (ocuppancyArray[x][y] != 0);
+		ocuppancyArray[x][y] = 1;
+
+		gameData->tiles[i].width = TILE_DEFAULT_WIDTH;
+		gameData->tiles[i].height = TILE_DEFAULT_HEIGHT;
+		gameData->tiles[i].active = true;
+
+		//gameData->tiles[i].bonus = retrieveCertainBonus();
+		gameData->tiles[i].resistance = 1; //TODO: confirm
+		gameData->tiles[i].posX = x * TILE_DEFAULT_WIDTH;
+		gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
+	}
+
+	for (int i = 0; i < 24; i++) {
+		for (int j = 0; j < 18; j++) {
+			if (ocuppancyArray[i][j] != 0)
+				continue;
+			gameData->tiles[i].width = TILE_DEFAULT_WIDTH;
+			gameData->tiles[i].height = TILE_DEFAULT_HEIGHT;
+			gameData->tiles[i].active = true;
+
+			gameData->tiles[i].bonus = NORMAL;
+			gameData->tiles[i].resistance = 4; //TODO: confirm
+			gameData->tiles[i].posX = i * TILE_DEFAULT_WIDTH;
+			gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
+		}
+	}
+	Server::gameData.releaseAccessGameData();
+}
+
+void GameDataManager::setupPlayers() {
+	WaitForSingleObject(hAccessMutex, INFINITE);
+
+	int screenSize = MAX_GAME_WIDTH;
+	int separator = MAX_GAME_WIDTH /  (Server::clients.getClientArray().size() + 1) ;
 
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		gameData->players[i].id = i;
@@ -86,15 +162,16 @@ void GameDataManager::setupPlayers() { //TODO: add ACTIVE players in the correct
 		gameData->players[i].width = PLAYER_DEFAULT_WIDTH;
 		gameData->players[i].lives = Server::config.getInitialLives();
 		gameData->players[i].points = 0;
+		gameData->players[i].posX = i + separator - PLAYER_DEFAULT_WIDTH/2;
+		gameData->players[i].posY = 30;
 	}
 
 	for (auto & clients : Server::clients.getClientArray()) {
 		clients->getPlayer()->active = true;
+		_tcscpy(clients->getPlayer()->name, clients->getName().c_str());
 	}
 
-	//TODO: put players in the right position regarding the size of the playing field
-
-	Server::gameData.releaseAccessGameData();
+	ReleaseMutex(hAccessMutex);
 }
 
 void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
