@@ -36,27 +36,18 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="bigIcon.bmp">
+    <Image Include="Images\bigIcon.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="small_icon.bmp">
+    <Image Include="Images\small_icon.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icon3.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="small_icon.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="bigIcon.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="background.bmp">
+    <Image Include="Images\bigIcon.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cursor1.cur">
+    <None Include="Images\cursor1.cur">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

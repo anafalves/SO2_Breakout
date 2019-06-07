@@ -3,7 +3,7 @@
 GameConfig Server::config;
 Top10Manager Server::topPlayers;
 SharedMemoryManager Server::sharedMemory;
-GameDataManager Server::gameData(nullptr);
+GameDataManager * Server::gameData = NULL;
 ThreadManager Server::threadManager;
 ClientManager Server::clients;
 
@@ -39,7 +39,7 @@ int Server::startServer(tstring fileName) {
 		return SHARED_MEMORY_ERROR;
 	}
 
-	gameData = GameDataManager(sharedMemory.getGameData());
+	gameData = new GameDataManager(sharedMemory.getGameData());
 
 	if (!threadManager.startLocalClientHandler()) {
 		return LOCAL_CLIENT_HANDLER_ERROR;
@@ -60,6 +60,7 @@ int Server::startServer(tstring fileName) {
 
 void Server::exitServer() {
 	SetEvent(sharedMemory.hExitEvent);
+
 	threadManager.endBallThread();
 	threadManager.endGameDataBroadcasterThread();
 	threadManager.endLocalClientHandler();
@@ -69,4 +70,6 @@ void Server::exitServer() {
 	threadManager.waitForLocalClientThread();
 	threadManager.waitForBallThread();
 	threadManager.waitForGameDataBroadcaster();
+
+	delete gameData;
 }

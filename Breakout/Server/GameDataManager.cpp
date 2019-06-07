@@ -63,7 +63,7 @@ void GameDataManager::generateLevel(int difficulty) {
 }
 
 void GameDataManager::setupBall() {
-	WaitForSingleObject(hAccessMutex, INFINITE);
+	lockAccessGameData();
 
 	for (auto &ball : gameData->balls) {
 		ball.active = false;
@@ -78,7 +78,7 @@ void GameDataManager::setupBall() {
 	gameData->balls->up = false;
 	gameData->balls->right = true;
 
-	ReleaseMutex(hAccessMutex);
+	releaseAccessGameData();
 }
 void retrieveCertainBonus() {
 	Server::config.getBonusDropRate();
@@ -179,7 +179,7 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 	int speed;
 	bool collision = false;
 
-	WaitForSingleObject(hAccessMutex, INFINITE);
+	lockAccessGameData();
 
 	speed = Server::config.getMovementSpeed();
 	selectedPlayerLeft = selectedPlayer->posX;
@@ -187,7 +187,7 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 
 	//if it's on the edge of the world leaves without change
 	if (selectedPlayerLeft == MIN_GAME_WIDTH || selectedPlayerRight == MAX_GAME_WIDTH) {
-		ReleaseMutex(hAccessMutex);
+		releaseAccessGameData();
 		return;
 	}
 
@@ -224,14 +224,14 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 			selectedPlayer->posX += speed;
 	}
 
-	ReleaseMutex(hAccessMutex);
+	releaseAccessGameData();
 }
 
 void GameDataManager::movePlayerPrecise(Player * selectedPlayer, int x) {
 	int selectedPlayerLeft, selectedPlayerRight;
 	bool collision = false;
 
-	WaitForSingleObject(hAccessMutex, INFINITE);
+	lockAccessGameData();
 	
 	selectedPlayerRight = selectedPlayer->posX + selectedPlayer->width;
 	selectedPlayerLeft = selectedPlayer->posX;
@@ -260,7 +260,7 @@ void GameDataManager::movePlayerPrecise(Player * selectedPlayer, int x) {
 	if (!collision)
 		selectedPlayer->posX = x;
 
-	ReleaseMutex(hAccessMutex);
+	releaseAccessGameData();
 }
 
 Player * GameDataManager::getAvailablePlayer() {

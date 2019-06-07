@@ -2,6 +2,7 @@
 
 SharedMemoryManager::SharedMemoryManager()
 {
+	ready = true;
 	initSharedMemory();
 	initSyncVariables();
 }
@@ -25,6 +26,7 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hGameData);
 	CloseHandle(hExitEvent);
 	CloseHandle(hReadyForUpdate);
+	CloseHandle(hUpdateEvent);
 }
 
 void SharedMemoryManager::initSharedMemory() {
@@ -38,7 +40,7 @@ void SharedMemoryManager::initSharedMemory() {
 	if (hServerBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create file mapping for server messageBuffer!");
+		ready = false;
 	}
 
 	viewServerBuffer = (ServerMsgBuffer *)MapViewOfFile(hServerBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
@@ -47,7 +49,7 @@ void SharedMemoryManager::initSharedMemory() {
 	{
 		tcout << "couldn't create map view of file for server messageBuffer!";
 		this->~SharedMemoryManager();
-		throw 10;//TEXT("couldn't create map view of file for server messageBuffer!");
+		ready = false;
 	}
 
 	//Local Client Message Buffer
@@ -59,7 +61,7 @@ void SharedMemoryManager::initSharedMemory() {
 	if (hClientBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create file mapping for client messageBuffer!");
+		ready = false;
 	}
 
 	viewClientBuffer = (ClientMsgBuffer *)MapViewOfFile(hClientBuffer, FILE_MAP_READ | FILE_MAP_WRITE,
@@ -67,7 +69,7 @@ void SharedMemoryManager::initSharedMemory() {
 	if (viewClientBuffer == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create map view of file for client messageBuffer!");
+		ready = false;
 	}
 
 
@@ -79,7 +81,7 @@ void SharedMemoryManager::initSharedMemory() {
 	if (hGameData == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create file mapping GameData!");
+		ready = false;
 	}
 
 	viewGameData = (GameData *)MapViewOfFile(hGameData, FILE_MAP_READ,
@@ -87,7 +89,7 @@ void SharedMemoryManager::initSharedMemory() {
 	if (viewGameData == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("couldn't create map view of file for GameData!");
+		ready = false;
 	}
 }
 
@@ -97,7 +99,7 @@ void SharedMemoryManager::initSyncVariables() {
 	if (hServerSemEmpty == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ServerSemaphore empty");
+		ready = false;
 	}
 
 	hServerSemFilled = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
@@ -105,7 +107,7 @@ void SharedMemoryManager::initSyncVariables() {
 	if (hServerSemFilled == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ServerSemaphore filled");
+		ready = false;
 	}
 
 	hClientSemEmpty = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
@@ -113,7 +115,7 @@ void SharedMemoryManager::initSyncVariables() {
 	if (hClientSemEmpty == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientSemaphore empty");
+		ready = false;
 	}
 
 	hClientSemFilled = OpenSemaphore(SEMAPHORE_ALL_ACCESS, false,
@@ -121,33 +123,33 @@ void SharedMemoryManager::initSyncVariables() {
 	if (hClientSemFilled == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientSemaphore filled");
+		ready = false;
 	}
 	
 	hUpdateEvent = OpenEvent(EVENT_ALL_ACCESS, false, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
 	if (hUpdateEvent == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to open gamedata update event");
+		ready = false;
 	}
 
 	hExitEvent = CreateEvent(NULL, false, false, NULL);
 	if (hExitEvent == NULL)
 	{
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create gamedata update event");
+		ready = false;
 	}
 
 	hClientWriteMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_WRITE.c_str());
 	if (hClientWriteMutex == NULL) {
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientWriteMutex");
+		ready = false;
 	}
 
 	hClientReadMutex = CreateMutex(NULL, FALSE, SharedMemoryConstants::MUT_CLI_READ.c_str());
 	if (hClientReadMutex == NULL) {
 		this->~SharedMemoryManager();
-		throw TEXT("Error while trying to create ClientReadMutex");
+		ready = false;
 	}
 }
 
@@ -158,4 +160,9 @@ bool SharedMemoryManager::getUpdateFlag(int id) {
 		return false;
 
 	return true;
+}
+
+bool SharedMemoryManager::isReady() const
+{
+	return ready;
 }

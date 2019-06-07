@@ -27,7 +27,7 @@ public:
 	int getClientID() { return client_id; }
 	void setClientID(int id) { client_id = id; }
 
-	virtual bool login(TCHAR * name) = 0;
+	virtual int login(TCHAR * name) = 0;
 	virtual GameData receiveBroadcast() = 0;
 	virtual bool sendMessage(ClientMsg message) = 0;
 	virtual ServerMsg receiveMessage() = 0;

@@ -1,10 +1,13 @@
 #include "RemoteClient.h"
+#include "Communication.h"
 
 RemoteClient::RemoteClient()
 	:Client()
 {
 	hPipeGameData = INVALID_HANDLE_VALUE;
 	hPipeMessage = INVALID_HANDLE_VALUE;
+
+	ipAddress = new tstring();
 
 	hExitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (hExitEvent == NULL) {
@@ -22,7 +25,7 @@ bool RemoteClient::isConnected() {
 }
 
 bool RemoteClient::connect(TCHAR * ipAddr) {
-	ipAddress = ipAddr;
+	*ipAddress = ipAddr;
 	bool success = false;
 	DWORD dwState = 0;
 	tstring pipeName = TEXT("\\\\");
@@ -38,7 +41,7 @@ bool RemoteClient::connect(TCHAR * ipAddr) {
 		FILE_SHARE_WRITE,
 		NULL,
 		OPEN_EXISTING,
-		0,
+		0 | FILE_FLAG_OVERLAPPED,
 		NULL
 	);
 
@@ -92,12 +95,10 @@ bool RemoteClient::connectToGameDataPipe(TCHAR * name) {
 	bool success = false;
 	DWORD dwState = 0;
 	tstring pipeName = TEXT("\\\\");
-	pipeName += ipAddress;
+	pipeName += *ipAddress;
 	pipeName += TEXT("\\");
 	pipeName += PipeConstants::GAMEDATA_PIPE_NAME.c_str();
 	pipeName += name;
-
-	tcout << "opening pipe:" << pipeName << endl;
 
 	if (!WaitNamedPipe(pipeName.c_str(), 5000)) {
 		return false;
@@ -124,15 +125,13 @@ bool RemoteClient::connectToGameDataPipe(TCHAR * name) {
 			return false;
 		}
 
-		tcout << "true!" << endl;
 		return true;
 	}
 
-	tcout << "failed to create pipe" << endl;
 	return false;
 }
 
-bool RemoteClient::login(TCHAR * name) {
+int RemoteClient::login(TCHAR * name) {
 	ServerMsg response;
 	ClientMsg request;
 
@@ -144,15 +143,23 @@ bool RemoteClient::login(TCHAR * name) {
 	}
 
 	response = receiveMessage();
-	if (response.type != ACCEPT) {
-		return false;
+	if (response.type == DENY_SERVER_FULL) {
+		return SERVER_FULL;
 	}
+	else if (response.type == DENY_USERNAME) {
+		return INVALID_USERNAME;
+	}
+	else
+		return CONNECTION_TIMED_OUT;
 
 	if (!connectToGameDataPipe(name)) {
-		return false;
+		FlushFileBuffers(hPipeMessage);
+		DisconnectNamedPipe(hPipeMessage);
+		CloseHandle(hPipeMessage);
+		return CONNECTION_TIMED_OUT;
 	}
 
-	return true;
+	return CONNECTED;
 }
 
 GameData RemoteClient::receiveBroadcast() {
@@ -170,6 +177,7 @@ GameData RemoteClient::receiveBroadcast() {
 }
 
 RemoteClient::~RemoteClient() {
+	delete ipAddress;
 	FlushFileBuffers(hPipeMessage);
 	FlushFileBuffers(hPipeGameData);
 	DisconnectNamedPipe(hPipeMessage);

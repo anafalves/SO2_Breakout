@@ -23,8 +23,10 @@
 #define IDC_OPTION_REMOTE               1007
 #define IDC_LIST1                       1008
 #define IDC_EDIT_UP                     1009
+#define IDC_EDIT_LEFT                   1009
 #define IDC_EDITDOWN                    1010
 #define IDC_EDIT_DOWN                   1010
+#define IDC_EDIT_RIGHT                  1010
 #define ID_EXTRAS_TOP10                 40001
 #define ID_EXTRAS_SOBRE                 40002
 #define ID_ABOUT                        40003
