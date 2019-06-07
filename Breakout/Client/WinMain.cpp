@@ -1,6 +1,7 @@
 //Base.c
 #include <windows.h>
 #include <tchar.h>
+#include <string>
 #include "../ClientDLL/Communication.h"
 #include "resource.h"
 
@@ -11,6 +12,7 @@
 
 LRESULT CALLBACK MainProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK LoginProc(HWND, UINT, WPARAM, LPARAM);
+DWORD WINAPI ReceiveGameThread(LPVOID * args);
 
 TCHAR szProgName[] = TEXT("Breakout");
 TCHAR staticTxtForMainWindow[4][50] = {
@@ -265,6 +267,11 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 BOOL CALLBACK Top10Proc(HWND hWnd, UINT messg,
 	WPARAM wParam, LPARAM lParam) 
 {
+	Top10 top10;
+	ClientMsg msg;
+	ServerMsg resp;
+	tstring place;
+
 	switch (messg) {
 		case WM_COMMAND:
 			switch (LOWORD(wParam)) {
@@ -278,10 +285,26 @@ BOOL CALLBACK Top10Proc(HWND hWnd, UINT messg,
 			return TRUE;
 		
 		case WM_INITDIALOG:
-			SendDlgItemMessage(hWnd, IDC_LIST1, LB_ADDSTRING,
-				0, (LPARAM)TEXT("João 100pts"));
-			SendDlgItemMessage(hWnd, IDC_LIST1, LB_ADDSTRING,
-				0, (LPARAM)TEXT("Ana 50pts"));
+			msg.id = client->getClientID();
+			msg.type = TOP10;
+			
+			client->sendMessage(msg);
+			resp = client->receiveMessage();
+
+			top10 = resp.message.top10;
+
+			for (int i = 0; i < 10; i++){
+				place = tto_string(i + 1);
+				place += (TEXT(": "));
+				place += top10.position[i].username;
+				place += (TEXT(" - "));
+				place += tto_string(top10.position[i].points);
+
+				SendDlgItemMessage(hWnd, IDC_LIST1, LB_ADDSTRING, 0,
+					(LPARAM)place.c_str());
+
+				place.clear();
+			}
 
 			return TRUE;
 	}
@@ -422,4 +445,8 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			break;
 	}
 	return(0);
+}
+
+DWORD WINAPI ReceiveGameThread(LPVOID * args) {
+	return 0;
 }
