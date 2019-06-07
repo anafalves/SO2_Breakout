@@ -36,6 +36,8 @@ public:
 	GameDataManager(GameData * gdata);
 	~GameDataManager();
 
+	void setGameDataState(int state);
+
 	Player * getAvailablePlayer();
 	GameData * getGameData();
 

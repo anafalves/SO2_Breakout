@@ -709,6 +709,10 @@ DWORD WINAPI GameDataBroadcast(LPVOID args) {
 		Server::clients.broadcastGameData();
 	}
 
+	Server::gameData->setGameDataState(SHUTDOWN);
+	Server::sharedMemory.setUpdate();
+	Server::clients.broadcastGameData();
+
 	tcout << "Game Broadcast Thread Ended" << endl;
 
 	return 0;
@@ -832,22 +836,30 @@ void ThreadManager::waitForRemoteConnectionThread() {
 
 	CloseHandle(hPipeMessage);
 	WaitForSingleObject(hRemoteConnectionHandler, INFINITE);
+	CloseHandle(hRemoteConnectionHandler);
 }
 
 void ThreadManager::waitForGameDataBroadcaster() {
 	WaitForSingleObject(hBroadcastThread, INFINITE);
+	CloseHandle(hBroadcastThread);
 }
 
 void ThreadManager::waitForLocalClientThread() {
 	WaitForSingleObject(hLocalClientHandler, INFINITE);
+	CloseHandle(hLocalClientHandler);
 }
 
 void ThreadManager::waitForBallThread() {
 	WaitForSingleObject(hBallThread, INFINITE);
+	CloseHandle(hBallThread);
 }
 
 void ThreadManager::waitForBonusesThreads() {
 	if (hBonuses.size() > 0) {
 		WaitForMultipleObjects(hBonuses.size(), hBonuses.data(), TRUE, INFINITE);
+	}
+
+	for (auto & thread : hBonuses) {
+		CloseHandle(thread);
 	}
 };

@@ -11,7 +11,8 @@ enum GameState {
 	GAME_OVER,
 	GAME_WON,
 	NEXT_LEVEL,
-	LOBBY
+	LOBBY,
+	SHUTDOWN
 };
 
 enum TilesValue {

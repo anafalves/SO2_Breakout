@@ -21,8 +21,19 @@ GameDataManager::~GameDataManager() {
 	CloseHandle(hGameEvent);
 }
 
+void GameDataManager::setGameDataState(int state) {
+	lockAccessGameData();
+	gameData->gameState = state;
+	releaseAccessGameData();
+}
+
 void GameDataManager::lockAccessGameData() {
-	WaitForSingleObject(hAccessMutex, INFINITE);
+	HANDLE access[2];
+
+	access[0] = hAccessMutex;
+	access[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, access, FALSE, INFINITE);
 }
 
 void GameDataManager::releaseAccessGameData() {
@@ -48,11 +59,12 @@ GameData * GameDataManager::getGameData() {
 
 void GameDataManager::setupGameStart()
 {
+	lockAccessGameData();
 	SecureZeroMemory(gameData, sizeof(GameData));
+	releaseAccessGameData();
 
 	setupBall();
 	setupPlayers();
-
 }
 
 void GameDataManager::generateLevel(int difficulty) {
@@ -80,12 +92,12 @@ void GameDataManager::setupBall() {
 
 	releaseAccessGameData();
 }
+
 void retrieveCertainBonus() {
-	Server::config.getBonusDropRate();
+	Server::config.getBonusDropRate(); //TODO: do dis 
 }
 
 void GameDataManager::setupTiles(int difficulty) {
-	Server::gameData.lockAccessGameData();
 
 	int ocuppancyArray[18][24] = { {0} };
 	int n_undestructables;
@@ -96,7 +108,9 @@ void GameDataManager::setupTiles(int difficulty) {
 
 	n_undestructables = 3 * difficulty + 5;
 
-	srand(time(NULL));
+	srand((unsigned) time(NULL));
+
+	lockAccessGameData();
 
 	for (int i = 0; i < n_undestructables; i++) {
 		do {
@@ -147,11 +161,12 @@ void GameDataManager::setupTiles(int difficulty) {
 			gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
 		}
 	}
-	Server::gameData.releaseAccessGameData();
+
+	releaseAccessGameData();
 }
 
 void GameDataManager::setupPlayers() {
-	WaitForSingleObject(hAccessMutex, INFINITE);
+	lockAccessGameData();
 
 	int screenSize = MAX_GAME_WIDTH;
 	int separator = MAX_GAME_WIDTH /  (Server::clients.getClientArray().size() + 1) ;
@@ -168,10 +183,10 @@ void GameDataManager::setupPlayers() {
 
 	for (auto & clients : Server::clients.getClientArray()) {
 		clients->getPlayer()->active = true;
-		_tcscpy(clients->getPlayer()->name, clients->getName().c_str());
+		_tcscpy_s(clients->getPlayer()->name, clients->getName().c_str());
 	}
 
-	ReleaseMutex(hAccessMutex);
+	releaseAccessGameData();
 }
 
 void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
@@ -264,16 +279,17 @@ void GameDataManager::movePlayerPrecise(Player * selectedPlayer, int x) {
 }
 
 Player * GameDataManager::getAvailablePlayer() {
-	WaitForSingleObject(hAccessMutex, INFINITE);
+
+	lockAccessGameData();
 
 	for (auto &player : gameData->players) {
 		if (!player.active) {
-			ReleaseMutex(hAccessMutex);
+			releaseAccessGameData();
 			return &player;
 		}
 	}
 
-	ReleaseMutex(hAccessMutex);
+	releaseAccessGameData();
 
 	return nullptr;
 }

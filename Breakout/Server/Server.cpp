@@ -9,7 +9,7 @@ ClientManager Server::clients;
 
 
 bool Server::isServerRunning() {
-	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
+	HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
 	if (!hEvent) {
 		return false;
 	}
@@ -61,10 +61,10 @@ int Server::startServer(tstring fileName) {
 void Server::exitServer() {
 	SetEvent(sharedMemory.hExitEvent);
 
-	threadManager.endBallThread();
-	threadManager.endGameDataBroadcasterThread();
 	threadManager.endLocalClientHandler();
 	threadManager.endRemoteConnectionHandler();
+	threadManager.endBallThread();
+	threadManager.endGameDataBroadcasterThread();
 
 	threadManager.waitForRemoteConnectionThread();
 	threadManager.waitForLocalClientThread();

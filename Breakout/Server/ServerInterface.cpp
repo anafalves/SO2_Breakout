@@ -179,6 +179,4 @@ void ServerInterface::startServer(tstring filename) {
 	}
 
 	startCommandLine();
-
-	Server::exitServer();
 }
