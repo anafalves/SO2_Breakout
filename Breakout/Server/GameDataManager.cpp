@@ -97,16 +97,36 @@ void retrieveCertainBonus() {
 	Server::config.getBonusDropRate(); //TODO: do dis 
 }
 
+
 void GameDataManager::setupTiles(int difficulty) {
 
-	int ocuppancyArray[18][24] = { {0} };
-	int n_undestructables;
-	int n_bonus;
-	int n_normals;
+	//for each lvl, the number of tiles increase, until they reach the maximum amount in the last available lvl
+	int tile_dif = TILES_MAX_COL_COUNT * TILES_MAX_LINE_COUNT - Server::config.getInitialTileCount();
+	int lvl_ratio = difficulty / Server::config.getLevelCount();
+	int tiles_number = tile_dif * lvl_ratio; 
+	//number of completed rows of tiles
+	int tiles_line_count = tiles_number / TILES_MAX_COL_COUNT; 
+	//number of tiles in the lasst line (only line uncompleted)
+	int tiles_left = tiles_number - tiles_line_count * TILES_MAX_COL_COUNT; 
+	int ocuppancyArray[TILES_MAX_LINE_COUNT][TILES_MAX_COL_COUNT] = { {0} };
+	
+	int n_undestructables = tiles_number / 3;
+
+	int bonus_sum = Server::config.getBallTripleCount() + Server::config.getSlowDownCount() +
+					Server::config.getSpeedUpCount() + Server::config.getExtraLifeCount();
+	int n_bonus_byRatio = Server::config.getBonusDropRate() * tiles_number;
+
+	int  n_bonus_byType[N_BONUS_TYPES] = {
+		Server::config.getSpeedUpCount() * n_bonus_byRatio / bonus_sum,
+		Server::config.getSlowDownCount() * n_bonus_byRatio / bonus_sum,
+		Server::config.getExtraLifeCount() * n_bonus_byRatio / bonus_sum,
+		Server::config.getBallTripleCount() * n_bonus_byRatio / bonus_sum
+	};
+	
+	int n_normals = tiles_number - n_bonus_byRatio - n_undestructables;
+	int index = 0;
 	int x;
 	int y;
-
-	n_undestructables = 3 * difficulty + 5;
 
 	srand((unsigned) time(NULL));
 
@@ -114,52 +134,72 @@ void GameDataManager::setupTiles(int difficulty) {
 
 	for (int i = 0; i < n_undestructables; i++) {
 		do {
-			x = rand() % 16 + 4;
-			y = rand() % 18;
+			x = rand() % (TILES_MAX_COL_COUNT - 4) + 4;
+			y = rand() % tiles_line_count;
 		} while (ocuppancyArray[x][y] != 0);
 		ocuppancyArray[x][y] = 1;
 
-		gameData->tiles[i].width = TILE_DEFAULT_WIDTH;
-		gameData->tiles[i].height = TILE_DEFAULT_HEIGHT;
-		gameData->tiles[i].active = true;
-		gameData->tiles[i].bonus = NORMAL;
-		gameData->tiles[i].resistance = UNBREAKABLE;
-		gameData->tiles[i].posX = x* TILE_DEFAULT_WIDTH;
-		gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
+		gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
+		gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
+		gameData->tiles[index].active = true;
+		gameData->tiles[index].bonus = NORMAL;
+		gameData->tiles[index].resistance = UNBREAKABLE;
+		gameData->tiles[index].posX = x* TILE_DEFAULT_WIDTH;
+		gameData->tiles[index].posY = y * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
+
+		index++;
 	}
 	
-	n_bonus = -2 * difficulty + 40;
-	
-	for (int i = 0; i < n_bonus; i++) {
-		do {
-			x = rand() % 24;
-			y = rand() % 18;
-		} while (ocuppancyArray[x][y] != 0);
-		ocuppancyArray[x][y] = 1;
+	BonusType type = SPEED_UP;
+	for (int k = 0; k < N_BONUS_TYPES; k++) {
+		for (int i = 0; i < n_bonus_byType[0]; i++) {
+			do {
+				x = rand() % TILES_MAX_COL_COUNT;
+				y = rand() % tiles_line_count;
+			} while (ocuppancyArray[x][y] != 0);
+			ocuppancyArray[x][y] = 1;
 
-		gameData->tiles[i].width = TILE_DEFAULT_WIDTH;
-		gameData->tiles[i].height = TILE_DEFAULT_HEIGHT;
-		gameData->tiles[i].active = true;
+			gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
+			gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
+			gameData->tiles[index].active = true;
+			gameData->tiles[index].bonus = type + i;
+			gameData->tiles[index].resistance = 1; //TODO: confirm
+			gameData->tiles[index].posX = x * TILE_DEFAULT_WIDTH;
+			gameData->tiles[index].posY = y * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
 
-		//gameData->tiles[i].bonus = retrieveCertainBonus();
-		gameData->tiles[i].resistance = 1; //TODO: confirm
-		gameData->tiles[i].posX = x * TILE_DEFAULT_WIDTH;
-		gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
+			index++;
+		}
 	}
 
-	for (int i = 0; i < 24; i++) {
-		for (int j = 0; j < 18; j++) {
+	for (int i = 0; i < tiles_line_count; i++) {
+		for (int j = 0; j < TILES_MAX_COL_COUNT; j++) {
 			if (ocuppancyArray[i][j] != 0)
 				continue;
-			gameData->tiles[i].width = TILE_DEFAULT_WIDTH;
-			gameData->tiles[i].height = TILE_DEFAULT_HEIGHT;
-			gameData->tiles[i].active = true;
+			
+			gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
+			gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
+			gameData->tiles[index].active = true;
 
-			gameData->tiles[i].bonus = NORMAL;
-			gameData->tiles[i].resistance = 4; //TODO: confirm
-			gameData->tiles[i].posX = i * TILE_DEFAULT_WIDTH;
-			gameData->tiles[i].posY = y * TILE_DEFAULT_HEIGHT + 2;
+			gameData->tiles[index].bonus = NORMAL;
+			gameData->tiles[index].resistance = 4; //TODO: confirm
+			gameData->tiles[index].posX = i * TILE_DEFAULT_WIDTH;
+			gameData->tiles[index].posY = y * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
+			
+			index++;
 		}
+	}
+
+	for (int i = 0; i < tiles_left; i++) {
+		gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
+		gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
+		gameData->tiles[index].active = true;
+
+		gameData->tiles[index].bonus = NORMAL;
+		gameData->tiles[index].resistance = 4; //TODO: confirm
+		gameData->tiles[index].posX = i * TILE_DEFAULT_WIDTH;
+		gameData->tiles[index].posY = tiles_line_count * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
+
+		index++;
 	}
 
 	releaseAccessGameData();

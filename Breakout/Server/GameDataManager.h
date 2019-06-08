@@ -4,10 +4,15 @@
 #include "GameData.h"
 
 enum ScreenDimensions {
-	MIN_GAME_HEIGHT = 0,
-	MIN_GAME_WIDTH = 0,
+	MIN_GAME_HEIGHT = 800,
+	MIN_GAME_WIDTH = 1200,
 	MAX_GAME_HEIGHT = 800,
 	MAX_GAME_WIDTH = 1200
+};
+
+enum TilesMaximumSet {
+	TILES_MAX_LINE_COUNT = 12,
+	TILES_MAX_COL_COUNT = 24
 };
 
 enum BitmapDimensions {
@@ -15,13 +20,15 @@ enum BitmapDimensions {
 	BALL_DEFAULT_HEIGHT = 20,
 
 	PLAYER_DEFAULT_WIDTH = 100,
-	PLAYER_DEFAULT_HEIGHT = 50,
+	PLAYER_DEFAULT_HEIGHT = 20,
 
 	BONUS_DEFAULT_WIDTH = 50,
-	BONUS_DEFAULT_HEIGHT = 50,
+	BONUS_DEFAULT_HEIGHT = 20,
 
-	TILE_DEFAULT_WIDTH = 80,
-	TILE_DEFAULT_HEIGHT = 50
+	TILE_DEFAULT_WIDTH = 50,
+	TILE_DEFAULT_HEIGHT = 20,
+
+	TILE_DEFAULT_SEPARATOR = 2
 };
 
 //No destructor needed since gameData is not owned by it

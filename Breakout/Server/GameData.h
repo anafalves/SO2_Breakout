@@ -1,4 +1,6 @@
 #pragma once
+const int N_BONUS_TYPES = 4;
+
 enum Constants {
 	MAX_PLAYERS = 20,
 	MAX_BONUSES = 50,

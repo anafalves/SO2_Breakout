@@ -1,7 +1,7 @@
 #include "GameConfig.h"
 
 GameConfig::GameConfig() 
-	:initialMovementSpeed(-1), maxPlayerCount(DEFAULT_PLAYER_COUNT), 
+	:initialMovementSpeed(DEFAULT_MOVEMENT_SPEED), maxPlayerCount(DEFAULT_PLAYER_COUNT), 
 	levelCount(DEFAULT_LEVEL_COUNT), speedUpCount(DEFAULT_SPEEDUP_COUNT), 
 	slowDownCount(DEFAULT_SLOWDOWN_COUNT), initialLives(DEFAULT_LIVES_COUNT), 
 	initialTileCount(DEFAULT_TILE_COUNT), movementSpeed(DEFAULT_MOVEMENT_SPEED), 
@@ -15,6 +15,10 @@ int GameConfig::getInitialLives() const {
 
 int GameConfig::getBallTripleCount() const {
 	return ballTripleCount;
+}
+
+int GameConfig::getExtraLifeCount() const{
+	return extraLifeCount;
 }
 
 int GameConfig::getInitialTileCount() const {
@@ -45,84 +49,110 @@ double GameConfig::getBonusDropRate() const {
 	return bonusDropRate;
 }
 
+//TDOD: new func, it's not being called from anywhere
+int GameConfig::getBonusTime() const {
+	return bonusTime;
+}
+
 
 //Setters
 bool GameConfig::setInitialLives(int lives) {
 	if (lives < 0)
 		return false;
-
+	
 	initialLives = lives;
 	return true;
 }
 
-bool GameConfig::setBallTripleCount(int count) {
-	if (count < 0)
-		return false;
+void GameConfig::setBallTripleCount(int count) {
+	if (count < MIN_TRIPLE_COUNT)
+		count = MIN_TRIPLE_COUNT;
+	else if (count > MAX_TRIPLE_COUNT)
+		count = MAX_TRIPLE_COUNT;
 
 	ballTripleCount = count;
-	return true;
 }
 
-bool GameConfig::setInitialTileCount(int tileCount) {
-	if (tileCount < 0)
-		return false;
+void GameConfig::setExtraLifeCount(int count)
+{
+	if(count < MIN_LIVES_COUNT)
+		count = MIN_LIVES_COUNT;
+	else if (count > MAX_LIVES_COUNT)
+		count = MAX_LIVES_COUNT;
+		
+	initialLives = count;
+}
+
+void GameConfig::setInitialTileCount(int tileCount) {
+	if (tileCount < MIN_TILE_COUNT)
+		tileCount = MIN_TILE_COUNT;
+	else if (tileCount > MAX_TILE_COUNT)
+		tileCount = MAX_TILE_COUNT;
 
 	initialTileCount = tileCount;
-	return true;
 }
 
-bool GameConfig::setLevelCount(int numberOfLevels) {
-	if (numberOfLevels < 0)
-		return false;
+void GameConfig::setLevelCount(int numberOfLevels) {
+	if (numberOfLevels < MIN_LEVEL_COUNT)
+		numberOfLevels = MIN_LEVEL_COUNT;
+	else if (numberOfLevels > MAX_LEVEL_COUNT)
+		numberOfLevels = MAX_LEVEL_COUNT;
 
 	levelCount = numberOfLevels;
-	return true;
 }
 
-bool GameConfig::setMaxPlayerCount(int numberOfPlayers) {
-	if (maxPlayerCount <= 0)
-		return false;
+void GameConfig::setMaxPlayerCount(int numberOfPlayers) {
+	if (numberOfPlayers < MIN_PLAYER_COUNT)
+		numberOfPlayers = MIN_PLAYER_COUNT;
+	if (numberOfPlayers > MAX_PLAYER_COUNT)
+		numberOfPlayers = MAX_PLAYER_COUNT;
 
 	maxPlayerCount = numberOfPlayers;
-	return true;
 }
 
-bool GameConfig::setMovementSpeed(int speed) {
-	if (speed <= 0)
-		return false;
+void GameConfig::setMovementSpeed(int speed) {
+	if (speed < initialMovementSpeed * 0.6)
+		speed = initialMovementSpeed * 0.6;
+	else if (speed > initialMovementSpeed * 1.5)
+		speed = initialMovementSpeed * 1.5;
 
-	if (initialMovementSpeed < 0) {
-		initialMovementSpeed = speed;
-	}
-
-	if(initialMovementSpeed / speed > initialMovementSpeed * 0.1)
-		movementSpeed = speed;
-	
-	return true;
+	movementSpeed = speed;
 }
 
-bool GameConfig::setSlowDownCount(int count) {
-	if (count < 0)
-		return false;
+void GameConfig::setSlowDownCount(int count) {
+	if (count < MIN_SLOWDOWN_COUNT)
+		count = MIN_SLOWDOWN_COUNT;
+	if (count > MAX_SLOWDOWN_COUNT)
+		count = MAX_SLOWDOWN_COUNT;
 
 	slowDownCount = count;
-	return true;
 }
 
-bool GameConfig::setSpeedUpCount(int count) {
-	if(count < 0)
-		return false;
+void GameConfig::setSpeedUpCount(int count) {
+	if (count < MIN_SPEEDUP_COUNT)
+		count = MIN_SPEEDUP_COUNT;
+	else if (count > MAX_SPEEDUP_COUNT)
+		count = MAX_SPEEDUP_COUNT;
 
 	speedUpCount = count;
-	return true;
 }
 
-bool GameConfig::setBonusDropRate(double rate) {
-	if (rate < 0 || rate > 1)
-		return false;
+void GameConfig::setBonusDropRate(double rate) {
+	if (rate < MIN_BONUS_RATE/100)
+		rate = MIN_BONUS_RATE/100;
+	else if(rate > MAX_BONUS_RATE/100)
+		rate = MAX_BONUS_RATE/100;
 
 	bonusDropRate = rate;
-	return true;
+}
+
+void GameConfig::setBonusTime(int time) {
+	if (time < MIN_BONUS_TIME)
+		time = MIN_BONUS_TIME;
+	else if (time > MAX_BONUS_TIME)
+		time = MAX_BONUS_TIME;
+
+	bonusTime = time;
 }
 
 tostream& operator << (tostream& tos, const GameConfig& cfg) {
@@ -136,6 +166,7 @@ tostream& operator << (tostream& tos, const GameConfig& cfg) {
 	tss << TEXT("Bonus Drop Rate: ") << cfg.getBonusDropRate() << endl;
 	tss << TEXT("Movement Speed: ") << cfg.getMovementSpeed() << endl;
 	tss << TEXT("Max players: ") << cfg.getMaxPlayerCount() << endl;
+	//tss << TEXT("Bonus duraction") << cfg.getBonusTime() << endl;	//TODO: to implement in file
 
 	tos << tss.str();
 	return tos;
