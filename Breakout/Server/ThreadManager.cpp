@@ -269,17 +269,19 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
-			if (ball.posX == MAX_GAME_WIDTH || ball.posX == MIN_GAME_WIDTH) {
+			if (ball.posX == MAX_GAME_WIDTH || ball.posX  == MIN_GAME_WIDTH) {
 				ball.right = !ball.right;
 			}
 
-			if (ball.posY == MAX_GAME_HEIGHT) {
+			if ((ball.posY + ball.height) == MIN_GAME_HEIGHT) {
 				ball.up = !ball.up;
 			}
 
-			if (ball.posY == MIN_GAME_HEIGHT) {
+			if (ball.posY == MAX_GAME_HEIGHT) {
 				ball.active = false;
-				gameData->players[ball.playerId].lives--;
+
+				if(ball.playerId >= 0)
+					gameData->players[ball.playerId].lives--;
 			}
 		}
 
@@ -328,16 +330,21 @@ DWORD WINAPI GameThread(LPVOID args) {
 	GameData * gameData = Server::gameData->getGameData();
 
 	while (CONTINUE) {
+		Server::gameData->setGameDataState(RUNNING);
+
 		// 1 - Position users
 		//If there are no clients, stop the thread.
 		if (Server::clients.getClientArray().size() == 0)
 			return -1;
 
-		Server::gameData->setupPlayers(); //TODO: this does nothing atm, needs to be coded.
+		Server::gameData->setupPlayers();
+		
 		// 2 - Generate map
-		Server::gameData->generateLevel(difficulty); //TODO: needs to be coded, this is doing nothing atm.
+		Server::gameData->generateLevel(difficulty);
+		
 		// 3 - Start ball thread
 		Server::threadManager.startBallThread();
+		
 		// 4 - wait for gameEvent
 		Server::gameData->waitForGameEvent();
 		if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
@@ -345,7 +352,7 @@ DWORD WINAPI GameThread(LPVOID args) {
 			continue; //Create a new level and all that great stuff
 		}
 		else { //if it's anyting else, then just quits
-			return 0; //take a look at this
+			return 0; //TODO: take a look at this
 		}
 	}
 
@@ -818,7 +825,6 @@ bool ThreadManager::isRemoteConnectionHandlerRunning() const {
 bool ThreadManager::isGameRunning() const{
 	return gameThreadRunning;
 }
-
 
 void ThreadManager::endBallThread() {
 	ballThreadRunning = false;
