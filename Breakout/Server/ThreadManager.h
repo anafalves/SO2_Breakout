@@ -18,6 +18,9 @@ class Server;
 
 class ThreadManager {
 private:
+	HANDLE hGameThread;
+	bool gameThreadRunning;
+
 	HANDLE hBallThread;
 	bool ballThreadRunning;
 
@@ -51,8 +54,10 @@ public:
 	bool isBroadcastRunning() const;
 	bool isLocalClientHandlerRunning() const;
 	bool isRemoteConnectionHandlerRunning() const;
+	bool isGameRunning() const;
 
 	bool startGameDataBroadcaster();
+	bool startGame();
 	bool startLocalClientHandler();
 	bool startRemoteConnectionHandler();
 	bool startBallThread();
@@ -62,10 +67,12 @@ public:
 	void endGameDataBroadcasterThread();
 	void endLocalClientHandler();
 	void endRemoteConnectionHandler();
+	void endGame();
 
 	void waitForGameDataBroadcaster();
 	void waitForLocalClientThread();
 	void waitForRemoteConnectionThread();
 	void waitForBallThread();
 	void waitForBonusesThreads();
+	void waitForGameThread();
 };

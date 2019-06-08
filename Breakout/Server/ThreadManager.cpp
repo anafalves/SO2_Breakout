@@ -321,10 +321,13 @@ DWORD WINAPI BallManager(LPVOID args) {
 }
 
 DWORD WINAPI GameThread(LPVOID args) {
+	bool * CONTINUE = (bool *)args;
+	*CONTINUE = true;
+
 	int difficulty = 0;
 	GameData * gameData = Server::gameData->getGameData();
 
-	while (true) {
+	while (CONTINUE) {
 		// 1 - Position users
 		//If there are no clients, stop the thread.
 		if (Server::clients.getClientArray().size() == 0)
@@ -760,6 +763,7 @@ bool ThreadManager::startBonusThread(Tile * tile) {
 	return true;
 }
 
+
 bool ThreadManager::startBallThread() {
 	if (ballThreadRunning) {
 		return false;
@@ -786,6 +790,15 @@ bool ThreadManager::startGameDataBroadcaster() {
 	return true;
 }
 
+bool ThreadManager::startGame() {
+
+	hGameThread = CreateThread(nullptr, 0, GameThread, (LPVOID)&gameThreadRunning, 0, nullptr);
+	if (hGameThread == nullptr)
+		return false;
+
+	return true;
+}
+
 bool ThreadManager::isBroadcastRunning() const {
 	return broadcastRunning;
 }
@@ -802,6 +815,10 @@ bool ThreadManager::isRemoteConnectionHandlerRunning() const {
 	return remoteConnectionHandlerRunning;
 }
 
+bool ThreadManager::isGameRunning() const{
+	return gameThreadRunning;
+}
+
 
 void ThreadManager::endBallThread() {
 	ballThreadRunning = false;
@@ -813,6 +830,11 @@ void ThreadManager::endLocalClientHandler() {
 
 void ThreadManager::endRemoteConnectionHandler() {
 	remoteConnectionHandlerRunning = false;
+}
+
+void ThreadManager::endGame()
+{
+	gameThreadRunning = false;
 }
 
 void ThreadManager::endGameDataBroadcasterThread(){
@@ -861,4 +883,10 @@ void ThreadManager::waitForBonusesThreads() {
 	for (auto & thread : hBonuses) {
 		CloseHandle(thread);
 	}
-};
+}
+void ThreadManager::waitForGameThread()
+{
+	WaitForSingleObject(hGameThread,INFINITE);
+	CloseHandle(hGameThread);
+}
+;
