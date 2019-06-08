@@ -107,7 +107,7 @@ void GameDataManager::setupTiles(int difficulty) {
 
 	int bonus_sum = Server::config.getBallTripleCount() + Server::config.getSlowDownCount() +
 					Server::config.getSpeedUpCount() + Server::config.getExtraLifeCount();
-	int n_bonus_byRatio = Server::config.getBonusDropRate() * tiles_number;
+	int n_bonus_byRatio = (int) Server::config.getBonusDropRate() * tiles_number;
 
 	int  n_bonus_byType[N_BONUS_TYPES] = {
 		Server::config.getSpeedUpCount() * n_bonus_byRatio / bonus_sum,

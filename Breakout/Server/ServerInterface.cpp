@@ -7,7 +7,8 @@ void displayHelp() {
 	tcout << "\t \'show top10\' -> Displays a list with the top 10 players." << endl;
 	tcout << "\t \'show configs\' -> Displays a list with the server's game configs." << endl;
 	tcout << "\t \'show clients\' -> Displays a list of clients signed-in the server." << endl;
-	tcout << "\t \'addtotop10 <player name> <points>\' - adds an user to the top 10 player's list if their points are high enough." << endl;
+	tcout << "\t \'addtotop10 <player name> <points>\' -> adds an user to the top 10 player's list if their points are high enough." << endl;
+	tcout << "\t \'startgame\' -> starts the game" << endl;
 }
 
 void ClearScreen()
@@ -118,6 +119,9 @@ void ServerInterface::handleCommand(tstring command, vector<tstring> argv) {
 		}
 		Server::topPlayers.addPlayer(p);
 		Server::topPlayers.saveTop10();
+	}
+	else if (command == TEXT("startgame")) {
+		Server::threadManager.startGame();
 	}
 	else if (command == TEXT("help")) 
 	{
