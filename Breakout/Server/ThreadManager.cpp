@@ -423,7 +423,6 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 				break;
 
 			case LEAVE:
-				Server::sharedMemory.writeMessage(reply);
 				Server::clients.removeClient(request.id);
 				break;
 		}//End of switch
