@@ -69,9 +69,7 @@ void GameDataManager::setupGameStart()
 
 void GameDataManager::generateLevel(int difficulty) {
 	//TODO: Code here
-	//Criar os tijolos bonus
-	//Criar tijolos destrutivris 
-	//Criar os tijolos destrutiveis,
+	setupTiles(difficulty);
 }
 
 void GameDataManager::setupBall() {
@@ -92,11 +90,6 @@ void GameDataManager::setupBall() {
 
 	releaseAccessGameData();
 }
-
-void retrieveCertainBonus() {
-	Server::config.getBonusDropRate(); //TODO: do dis 
-}
-
 
 void GameDataManager::setupTiles(int difficulty) {
 
