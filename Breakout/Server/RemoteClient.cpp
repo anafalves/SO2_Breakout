@@ -29,7 +29,7 @@ void RemoteClient::sendUpdate() {
 
 	WaitForMultipleObjects(2, write, FALSE, INFINITE);
 	GetOverlappedResult(hPipeGameData, &flag, &nBytes, FALSE);
-	if (nBytes != sizeof(ServerMsg) || GetLastError() == ERROR_BROKEN_PIPE) {
+	if (nBytes != sizeof(GameData) || GetLastError() == ERROR_BROKEN_PIPE) {
 		return;
 	}
 }

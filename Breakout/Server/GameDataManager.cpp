@@ -97,11 +97,12 @@ void GameDataManager::setupTiles(int difficulty) {
 	int tile_dif = TILES_MAX_COL_COUNT * TILES_MAX_LINE_COUNT - Server::config.getInitialTileCount();
 	int lvl_ratio = difficulty / Server::config.getLevelCount();
 	int tiles_number = tile_dif * (lvl_ratio +1); 
+
 	//number of completed rows of tiles
 	int tiles_line_count = tiles_number / TILES_MAX_COL_COUNT; 
 	//number of tiles in the lasst line (only line uncompleted)
 	int tiles_left = tiles_number - tiles_line_count * TILES_MAX_COL_COUNT; 
-	int ocuppancyArray[TILES_MAX_LINE_COUNT][TILES_MAX_COL_COUNT] = { {0} };
+	int ocuppancyArray[TILES_MAX_COL_COUNT][TILES_MAX_LINE_COUNT] = { {0} };
 	
 	int n_undestructables = tiles_number / 4;
 

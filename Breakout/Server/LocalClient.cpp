@@ -22,6 +22,6 @@ HANDLE & LocalClient::getPrimaryHandle() {
 LocalClient::~LocalClient()
 {
 	Server::sharedMemory.removeNotifiers(notifyUpdate, notifyResourceFreed);
-	CloseHandle(notifyResourceFreed);
-	CloseHandle(notifyUpdate);
+	/*CloseHandle(notifyResourceFreed);
+	CloseHandle(notifyUpdate);*/
 }

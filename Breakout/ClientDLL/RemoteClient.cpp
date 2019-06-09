@@ -167,8 +167,6 @@ int RemoteClient::login(TCHAR * name) {
 	else if (response.type == DENY_USERNAME) {
 		return INVALID_USERNAME;
 	}
-	else
-		return CONNECTION_TIMED_OUT;
 
 	if (!connectToGameDataPipe(name)) {
 		FlushFileBuffers(hPipeMessage);
