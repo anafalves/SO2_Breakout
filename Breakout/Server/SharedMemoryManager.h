@@ -4,13 +4,15 @@
 #include "Messages.h"
 #include "GeneralConstants.h"
 #include "GameData.h"
-#include "Spectator.h"
 
 class SharedMemoryManager
 {
 private:
-	int updateCounter;
-	vector<HANDLE> updateFlags;
+	vector<HANDLE> updateNotifications;
+	vector<HANDLE> clientReadyNotifications;
+
+	HANDLE hClientReadyMutex;
+	HANDLE hUpdateMutex;
 
 	HANDLE hGameData;
 	HANDLE hServerBuffer;
@@ -29,18 +31,17 @@ private:
 	int initSemaphores();
 
 public:
-	HANDLE hUpdateEvent;
 	HANDLE hExitEvent;
 
 	int initSharedMemory();
 	ClientMsg readMessage();
 	void writeMessage(ServerMsg message);
-	void setUpdate();
+	void setUpdate(HANDLE & handle) const;
 	GameData * getGameData() const;
 
-	int addClientUpdateFlag(HANDLE & flag);
-	void removeClientUpdateFlag(HANDLE flag);
-	void waitForUpdateFlags();
+	bool addNotifiers(HANDLE & clientReady, HANDLE & updateReady, tstring name);
+	void removeNotifiers(HANDLE & updateReady, HANDLE & clientReady);
+	void waitForAllClientsReady();
 
 	SharedMemoryManager();
 	~SharedMemoryManager();

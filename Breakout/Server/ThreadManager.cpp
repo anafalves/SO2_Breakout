@@ -28,8 +28,8 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 		return -1;
 	}
 
+	Server::sharedMemory.waitForAllClientsReady();
 	Server::gameData->lockAccessGameData();
-	Server::sharedMemory.waitForUpdateFlags();
 
 	for (auto & b : gameData->bonuses) {
 		if (!b.active) {
@@ -39,17 +39,17 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 			break;
 		}
 	}
-	Server::sharedMemory.setUpdate();
+
 	Server::gameData->releaseAccessGameData();
+	Server::clients.broadcastGameData();
 
 	if (bonus == nullptr)
 		return 1;
 
 	while (bonus->active) {
 		WaitForSingleObject(hTimer, INFINITE);
-
+		Server::sharedMemory.waitForAllClientsReady();
 		Server::gameData->lockAccessGameData();
-		Server::sharedMemory.waitForUpdateFlags();
 
 		bonus->posY += Server::config.getMovementSpeed();
 
@@ -85,12 +85,13 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 
 				bonus->active = false;
 				Server::gameData->releaseAccessGameData();
-				Server::sharedMemory.setUpdate();
+				Server::clients.broadcastGameData();
 				return 0;
 			}
 		}
-		Server::sharedMemory.setUpdate();
+
 		Server::gameData->releaseAccessGameData();
+		Server::clients.broadcastGameData();
 	}
 
 	return 0;
@@ -124,7 +125,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 		return -1;
 	}
 
-	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
+	if (!SetWaitableTimer(hTimer, &liDueTime, 20, NULL, NULL, 0)) {
 		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
 		return -1;
 	}
@@ -132,8 +133,8 @@ DWORD WINAPI BallManager(LPVOID args) {
 	while (*CONTINUE)
 	{
 		WaitForSingleObject(hTimer, INFINITE);
+		Server::sharedMemory.waitForAllClientsReady();
 		Server::gameData->lockAccessGameData();
-		Server::sharedMemory.waitForUpdateFlags();
 
 		ballAvailable = false;
 		playersAlive = false;
@@ -269,17 +270,19 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
-			if (ball.posX == MAX_GAME_WIDTH || ball.posX == MIN_GAME_WIDTH) {
+			if (ball.posX == MAX_GAME_WIDTH || ball.posX  == MIN_GAME_WIDTH) {
 				ball.right = !ball.right;
 			}
 
-			if (ball.posY == MAX_GAME_HEIGHT) {
+			if ((ball.posY + ball.height) == MIN_GAME_HEIGHT) {
 				ball.up = !ball.up;
 			}
 
-			if (ball.posY == MIN_GAME_HEIGHT) {
+			if (ball.posY == MAX_GAME_HEIGHT) {
 				ball.active = false;
-				gameData->players[ball.playerId].lives--;
+
+				if(ball.playerId >= 0)
+					gameData->players[ball.playerId].lives--;
 			}
 		}
 
@@ -303,8 +306,9 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 		}
 
-		Server::sharedMemory.setUpdate();
 		Server::gameData->releaseAccessGameData();
+		tcout << "notified users" << endl;
+		Server::clients.broadcastGameData();
 
 		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
@@ -328,16 +332,22 @@ DWORD WINAPI GameThread(LPVOID args) {
 	GameData * gameData = Server::gameData->getGameData();
 
 	while (CONTINUE) {
+		Server::gameData->setGameDataState(RUNNING);
+		Server::gameData->setupBall();
+
 		// 1 - Position users
 		//If there are no clients, stop the thread.
 		if (Server::clients.getClientArray().size() == 0)
 			return -1;
 
-		Server::gameData->setupPlayers(); //TODO: this does nothing atm, needs to be coded.
+		Server::gameData->setupPlayers();
+		
 		// 2 - Generate map
-		Server::gameData->generateLevel(difficulty); //TODO: needs to be coded, this is doing nothing atm.
+		Server::gameData->generateLevel(difficulty);
+		
 		// 3 - Start ball thread
 		Server::threadManager.startBallThread();
+		
 		// 4 - wait for gameEvent
 		Server::gameData->waitForGameEvent();
 		if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
@@ -345,7 +355,7 @@ DWORD WINAPI GameThread(LPVOID args) {
 			continue; //Create a new level and all that great stuff
 		}
 		else { //if it's anyting else, then just quits
-			return 0; //take a look at this
+			return 0; //TODO: take a look at this
 		}
 	}
 
@@ -358,7 +368,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	Player * player = nullptr;
 	ClientMsg request;
 	ServerMsg reply;
-	HANDLE flag;
+	HANDLE update, ready;
 
 	*CONTINUE = true;
 	
@@ -408,13 +418,12 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 						break;
 					}
 
-					reply.update_id = Server::sharedMemory.addClientUpdateFlag(flag); //Creats a handle to sync server write and local clirne read operations
-					if (reply.update_id < 0) {
+					if(Server::sharedMemory.addNotifiers(ready, update, request.message.name) == false){
 						reply.type = DENY_SERVER_FULL;
 						Server::sharedMemory.writeMessage(reply);
 						break;
 					}
-					Server::clients.AddClient(request.message.name, player, flag, reply.id);
+					Server::clients.AddLocalClient(request.message.name, player, ready, update, reply.id);
 					
 					reply.type = ACCEPT;
 					_tcscpy_s(reply.message.receiver, request.message.name);
@@ -610,7 +619,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 					}
 					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 
-					Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
+					Server::clients.AddRemoteClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
 					player = Server::clients.getClientPlayer(reply.id);
 					break;
 				}
@@ -697,28 +706,6 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 	return 0;
 }
 
-//This thread handles the updates for the clients
-DWORD WINAPI GameDataBroadcast(LPVOID args) {
-	bool * CONTINUE = (bool *)args;
-	HANDLE update[2];
-
-	(*CONTINUE) = true;
-	update[0] = Server::sharedMemory.hUpdateEvent;
-	update[1] = Server::sharedMemory.hExitEvent;
-
-	while (*CONTINUE) {
-		WaitForMultipleObjects(2,update,FALSE,INFINITE);
-		Server::clients.broadcastGameData();
-	}
-
-	Server::gameData->setGameDataState(SHUTDOWN);
-	Server::sharedMemory.setUpdate();
-	Server::clients.broadcastGameData();
-
-	tcout << "Game Broadcast Thread Ended" << endl;
-
-	return 0;
-}
 
 bool ThreadManager::startLocalClientHandler(){
 	if (localClientHandlerRunning) {
@@ -777,30 +764,13 @@ bool ThreadManager::startBallThread() {
 	return true;
 }
 
-bool ThreadManager::startGameDataBroadcaster() {
-	if (broadcastRunning) {
-		return false;
-	}
-
-	hBroadcastThread = CreateThread(nullptr, 0, GameDataBroadcast, (LPVOID)&broadcastRunning, 0, nullptr);
-	if (hBroadcastThread == nullptr) {
-		return false;
-	}
-
-	return true;
-}
-
-bool ThreadManager::startGame() {
+bool ThreadManager::startGameThread() {
 
 	hGameThread = CreateThread(nullptr, 0, GameThread, (LPVOID)&gameThreadRunning, 0, nullptr);
 	if (hGameThread == nullptr)
 		return false;
 
 	return true;
-}
-
-bool ThreadManager::isBroadcastRunning() const {
-	return broadcastRunning;
 }
 
 bool ThreadManager::isBallThreadRunning() const {
@@ -819,7 +789,6 @@ bool ThreadManager::isGameRunning() const{
 	return gameThreadRunning;
 }
 
-
 void ThreadManager::endBallThread() {
 	ballThreadRunning = false;
 }
@@ -835,10 +804,6 @@ void ThreadManager::endRemoteConnectionHandler() {
 void ThreadManager::endGame()
 {
 	gameThreadRunning = false;
-}
-
-void ThreadManager::endGameDataBroadcasterThread(){
-	 broadcastRunning = false;
 }
 
 void ThreadManager::waitForRemoteConnectionThread() {
@@ -860,11 +825,6 @@ void ThreadManager::waitForRemoteConnectionThread() {
 	CloseHandle(hRemoteConnectionHandler);
 }
 
-void ThreadManager::waitForGameDataBroadcaster() {
-	WaitForSingleObject(hBroadcastThread, INFINITE);
-	CloseHandle(hBroadcastThread);
-}
-
 void ThreadManager::waitForLocalClientThread() {
 	WaitForSingleObject(hLocalClientHandler, INFINITE);
 	CloseHandle(hLocalClientHandler);
@@ -884,9 +844,9 @@ void ThreadManager::waitForBonusesThreads() {
 		CloseHandle(thread);
 	}
 }
+
 void ThreadManager::waitForGameThread()
 {
 	WaitForSingleObject(hGameThread,INFINITE);
 	CloseHandle(hGameThread);
 }
-;

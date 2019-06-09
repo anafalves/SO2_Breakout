@@ -9,7 +9,7 @@ ClientManager Server::clients;
 
 
 bool Server::isServerRunning() {
-	HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
+	HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("ServerUp"));
 	if (!hEvent) {
 		return false;
 	}
@@ -49,10 +49,6 @@ int Server::startServer(tstring fileName) {
 		return REMOTE_CONNECTION_HANDLER_ERROR;
 	}
 
-	if (!threadManager.startGameDataBroadcaster()) {
-		return BROADCASTER_STARTUP_ERROR;
-	}
-
 	//TODO: Create a game thread, that will handle the game and start the ball as the players loose it and what not
 
 	return SERVER_STARTED;
@@ -64,12 +60,10 @@ void Server::exitServer() {
 	threadManager.endLocalClientHandler();
 	threadManager.endRemoteConnectionHandler();
 	threadManager.endBallThread();
-	threadManager.endGameDataBroadcasterThread();
 
 	threadManager.waitForRemoteConnectionThread();
 	threadManager.waitForLocalClientThread();
 	threadManager.waitForBallThread();
-	threadManager.waitForGameDataBroadcaster();
 
 	delete gameData;
 }

@@ -27,9 +27,6 @@ private:
 	HANDLE hLocalClientHandler;
 	bool localClientHandlerRunning;
 
-	HANDLE hBroadcastThread;
-	bool broadcastRunning;
-
 	HANDLE hRemoteConnectionHandler;
 	bool remoteConnectionHandlerRunning;
 
@@ -43,9 +40,6 @@ public:
 		hLocalClientHandler = nullptr;
 		localClientHandlerRunning = false;
 
-		hBroadcastThread = nullptr;
-		broadcastRunning = false;
-
 		hRemoteConnectionHandler = nullptr;
 		remoteConnectionHandlerRunning = false;
 	};
@@ -57,7 +51,7 @@ public:
 	bool isGameRunning() const;
 
 	bool startGameDataBroadcaster();
-	bool startGame();
+	bool startGameThread();
 	bool startLocalClientHandler();
 	bool startRemoteConnectionHandler();
 	bool startBallThread();

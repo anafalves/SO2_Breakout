@@ -23,14 +23,15 @@ private:
 public:
 	Client(std::tstring pname, Player * p);
 
+	virtual HANDLE & getPrimaryHandle() = 0;
 	int getId() const;
 	tstring getName() const;
 	bool isInGame() const;
 	void setInGame(bool status);
 	Player * getPlayer();
 
-	virtual void sendUpdate();
+	virtual void sendUpdate() = 0;
 	virtual tstring getAsString();
 
-	~Client();
+	virtual ~Client();
 };

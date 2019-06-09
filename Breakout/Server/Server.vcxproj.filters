@@ -143,8 +143,5 @@
     <ClInclude Include="GeneralConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Spectator.h">
-      <Filter>Header Files\Communication\ClientClasses</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

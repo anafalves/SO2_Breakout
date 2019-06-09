@@ -201,6 +201,8 @@ GameData RemoteClient::receiveBroadcast() {
 }
 
 RemoteClient::~RemoteClient() {
+	//TODO: send exit message if pipe is open
+
 	delete ipAddress;
 	SetEvent(hExitEvent);
 	FlushFileBuffers(hPipeMessage);

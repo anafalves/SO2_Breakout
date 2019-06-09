@@ -67,6 +67,10 @@ void ServerInterface::startCommandLine() {
 			argv.push_back(argument);
 		}
 
+		for (auto & x : command) { //convert command from text file to lower-case to make it case insensitive
+			x = _totlower(x);
+		}
+
 		handleCommand(command, argv);
 		argv.clear();
 
@@ -75,10 +79,6 @@ void ServerInterface::startCommandLine() {
 
 void ServerInterface::handleCommand(tstring command, vector<tstring> argv) {
 	tstringstream tss;
-
-	for (auto & x : command) { //convert command from text file to lower-case to make it case insensitive
-		x = _totlower(x);
-	}
 
 	if (command == TEXT("show"))
 	{
@@ -121,7 +121,7 @@ void ServerInterface::handleCommand(tstring command, vector<tstring> argv) {
 		Server::topPlayers.saveTop10();
 	}
 	else if (command == TEXT("startgame")) {
-		Server::threadManager.startGame();
+		Server::threadManager.startGameThread();
 	}
 	else if (command == TEXT("help")) 
 	{

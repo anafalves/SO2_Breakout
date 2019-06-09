@@ -5,16 +5,21 @@
 class LocalClient : public Client
 {
 private:
-	HANDLE updateFlag;
+	HANDLE notifyResourceFreed; //Notifies server that client is no longer using resource
+	HANDLE notifyUpdate;  //Notifies client of update of data
 
 public:
-	LocalClient(std::tstring username, HANDLE flag, Player * p)
-		:Client(username, p), updateFlag(flag)
+	LocalClient(std::tstring username, HANDLE resourceFreed, HANDLE updateReady, Player * p)
+		:Client(username, p), notifyResourceFreed(resourceFreed), notifyUpdate(updateReady)
 	{
 	}
 
-	const HANDLE getFlag() const;
+	HANDLE & getPrimaryHandle();
+	void sendUpdate();
 
-	~LocalClient();
+	const HANDLE getResourceFreedNotifier() const;
+	const HANDLE getUpdateReadyNotifier() const;
+
+	virtual ~LocalClient();
 };
 

@@ -9,6 +9,10 @@ RemoteClient::RemoteClient(tstring username, Player * p, HANDLE pipe, HANDLE hGa
 		throw EXCEPTION_ACCESS_VIOLATION;
 }
 
+HANDLE & RemoteClient::getPrimaryHandle() {
+	return hPipe;
+}
+
 void RemoteClient::sendUpdate() {
 
 	DWORD nBytes = 0;
