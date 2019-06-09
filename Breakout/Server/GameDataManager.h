@@ -4,8 +4,8 @@
 #include "GameData.h"
 
 enum ScreenDimensions {
-	MIN_GAME_HEIGHT = 800,
-	MIN_GAME_WIDTH = 1200,
+	MIN_GAME_HEIGHT = 0,
+	MIN_GAME_WIDTH = 0,
 	MAX_GAME_HEIGHT = 800,
 	MAX_GAME_WIDTH = 1200
 };
@@ -16,8 +16,8 @@ enum TilesMaximumSet {
 };
 
 enum BitmapDimensions {
-	BALL_DEFAULT_WIDTH = 20,
-	BALL_DEFAULT_HEIGHT = 20,
+	BALL_DEFAULT_WIDTH = 35,
+	BALL_DEFAULT_HEIGHT = 35,
 
 	PLAYER_DEFAULT_WIDTH = 100,
 	PLAYER_DEFAULT_HEIGHT = 20,
