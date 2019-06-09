@@ -249,7 +249,6 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 						client = local;
 						CONTINUE = true;
 						CONTINUE2 = false;
-						client->CONTINUE = true;
 					}
 				}
 			}
@@ -259,6 +258,12 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 			//SetTextColor(memdcGame, RGB(0, 0, 0));
 
 			//TextOut(memdcGame, Game_WIDTH / 2, WIND_HEIGHT / 3, TEXT("Waiting for Server to start the game!"), _tcslen(TEXT("Waiting for Server to start the game!")));
+
+			GetDlgItemText(hWnd, IDC_EDIT_LEFT, key, 10);
+			leftKey = LOBYTE(key[0]);
+
+			GetDlgItemText(hWnd, IDC_EDIT_RIGHT, key, 10);
+			rightKey = LOBYTE(key[0]);
 
 			EndDialog(hWnd, 0);
 			return TRUE;
@@ -452,13 +457,13 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			break;
 
 		case WM_KEYDOWN:
-			if (wParam == rightKey) {
+			if (wParam == VK_LEFT || wParam == leftKey) {
 				message.id = client->getClientID();
 				message.type = MOVE;
 				message.message.basicMove = LEFT;
 				client->sendMessage(message);
 			}
-			else if (wParam == leftKey) {
+			else if (wParam == VK_RIGHT || wParam == rightKey) {
 				message.id = client->getClientID();
 				message.type = MOVE;
 				message.message.basicMove = RIGHT;
@@ -510,8 +515,8 @@ void LoadResources() {
 	hNormalDamagedTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP5), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hBonusTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP12), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hUnbrokenTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP9), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
-	hPlatformPlayer = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP13), IMAGE_BITMAP, 100, 40, LR_DEFAULTSIZE);
-	hPlatformOthers = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP14), IMAGE_BITMAP, 100, 40, LR_DEFAULTSIZE);
+	hPlatformPlayer = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP13), IMAGE_BITMAP, 120, 30, LR_DEFAULTSIZE);
+	hPlatformOthers = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP14), IMAGE_BITMAP, 120, 30, LR_DEFAULTSIZE);
 	hSpeedUpBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP6), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hSpeedDownBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP8), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hLifeBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP7), IMAGE_BITMAP, 40, 40, LR_DEFAULTSIZE);
