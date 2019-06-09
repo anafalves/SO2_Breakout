@@ -213,8 +213,8 @@ void GameDataManager::setupPlayers() {
 		gameData->players[i].width = PLAYER_DEFAULT_WIDTH;
 		gameData->players[i].lives = Server::config.getInitialLives();
 		gameData->players[i].points = 0;
-		gameData->players[i].posX = i + separator - PLAYER_DEFAULT_WIDTH/2;
-		gameData->players[i].posY = MAX_GAME_HEIGHT - 60;
+		gameData->players[i].posX = (i+1)* separator - PLAYER_DEFAULT_WIDTH/2;
+		gameData->players[i].posY = MAX_GAME_HEIGHT - 50;
 	}
 
 	for (auto & clients : Server::clients.getClientArray()) {
@@ -228,7 +228,6 @@ void GameDataManager::setupPlayers() {
 void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 	int selectedPlayerLeft, selectedPlayerRight;
 	int speed;
-	bool collision = false;
 
 	lockAccessGameData();
 
@@ -250,13 +249,11 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 
 			//if there is a collision ativates a flag
 			if ((selectedPlayerLeft - speed) < player.posX + player.width) {
-				collision = true;
 				break;
 			}
 		}
-
-		if (!collision)
-			selectedPlayer->posX -= speed;
+		
+		selectedPlayer->posX -= speed;
 	}
 	else
 	{
@@ -266,13 +263,11 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 
 			//if there is a collision ativates a flag
 			if ((selectedPlayerRight + speed) < player.posX) {
-				collision = true;
 				break;
 			}
 		}
 
-		if (!collision)
-			selectedPlayer->posX += speed;
+		selectedPlayer->posX += speed;
 	}
 
 	releaseAccessGameData();

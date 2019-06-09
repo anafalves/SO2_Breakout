@@ -147,174 +147,175 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			if (ball.up) {
-				ball.posY++;
+				ball.posY += Server::config.getMovementSpeed();
 			}
 			else {
-				ball.posY--;
+				ball.posY -= Server::config.getMovementSpeed();
 			}
 
 			if (ball.right) {
-				ball.posX++;
+				ball.posX += Server::config.getMovementSpeed();
 			}
 			else {
-				ball.posX--;
+				ball.posX -= Server::config.getMovementSpeed();
 			}
 
-			//TODO: verify if the Y it's in the tile zone before doing this
-			ballLeft = ball.posX;
-			ballRight = ball.posX + ball.width;
-			ballTop = ball.posY;
-			ballBottom = ball.posY + ball.height;
+			////TODO: verify if the Y it's in the tile zone before doing this
+			//ballLeft = ball.posX;
+			//ballRight = ball.posX + ball.width;
+			//ballTop = ball.posY;
+			//ballBottom = ball.posY + ball.height;
 
-			for (auto &tile : gameData->tiles) {
-				if (!tile.active) {
-					continue;
-				}
+			//for (auto &tile : gameData->tiles) {
+			//	if (!tile.active) {
+			//		continue;
+			//	}
 
-				if (tile.resistance != UNBREAKABLE)
-					tilesAvailable = true;
+			//	if (tile.resistance != UNBREAKABLE)
+			//		tilesAvailable = true;
 
-				tileLeft = tile.posX;
-				tileRight = tile.posX + tile.width;
-				tileTop = tile.posY;
-				tileBottom = tile.posY + tile.height;
+			//	tileLeft = tile.posX;
+			//	tileRight = tile.posX + tile.width;
+			//	tileTop = tile.posY;
+			//	tileBottom = tile.posY + tile.height;
 
-				//if ball hits right or left of a tile
-				if ((ballLeft < tileRight && tileRight < ballRight) ||
-					(ballLeft < tileLeft && tileLeft < ballRight) &&
-					(tileTop <= ballTop || tileBottom >= ballBottom))
-				{
-					ball.right = !ball.right;
-					hit = true;
+			//	//if ball hits right or left of a tile
+			//	if ((ballLeft < tileRight && tileRight < ballRight) ||
+			//		(ballLeft < tileLeft && tileLeft < ballRight) &&
+			//		(tileTop <= ballTop || tileBottom >= ballBottom))
+			//	{
+			//		//ball.right = !ball.right;
+			//		//hit = true;
 
-					if (tile.resistance == UNBREAKABLE)
-						break;
+			//		if (tile.resistance == UNBREAKABLE)
+			//			break;
 
-					if (--tile.resistance == 0)
-						tile.active = false;
+			//		if (--tile.resistance == 0)
+			//			tile.active = false;
 
-					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
+			//		gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
 
-					if (tile.bonus)
-					{
-						Server::threadManager.startBonusThread(&tile);
-					}
-				}
+			//		if (tile.bonus)
+			//		{
+			//			//Server::threadManager.startBonusThread(&tile);
+			//		}
+			//	}
 
-				//if ball hits top or bottom of a tile
-				if ((ballTop < tileTop && tileTop < ballBottom) ||
-					(ballTop < tileBottom && tileBottom < ballBottom) &&
-					(tileLeft <= ballLeft || tileRight >= ballRight))
-				{
-					ball.up = !ball.up;
-					hit = true;
+			//	//if ball hits top or bottom of a tile
+			//	if ((ballTop < tileTop && tileTop < ballBottom) ||
+			//		(ballTop < tileBottom && tileBottom < ballBottom) &&
+			//		(tileLeft <= ballLeft || tileRight >= ballRight))
+			//	{
+			//		ball.up = !ball.up;
+			//		hit = true;
 
-					if (tile.resistance == UNBREAKABLE)
-						break;
+			//		if (tile.resistance == UNBREAKABLE)
+			//			break;
 
-					if (--tile.resistance == 0)
-						tile.active = false;
+			//		if (--tile.resistance == 0)
+			//			tile.active = false;
 
-					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
+			//		gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
 
-					if (tile.bonus)
-					{
-						Server::threadManager.startBonusThread(&tile);
-					}
-				}
-			}
+			//		if (tile.bonus)
+			//		{
+			//			Server::threadManager.startBonusThread(&tile);
+			//		}
+			//	}
+			//}
 
-			if (!tilesAvailable) {
+			/*if (!tilesAvailable) {
 				gameData->gameState = NEXT_LEVEL;
 				Server::gameData->setGameEvent();
 				break;
 			}
 
 			if (hit)
-				continue;
+				continue;*/
 
-			for (auto &player : gameData->players) {
-				if (!player.active || player.lives == 0) {
-					continue;
-				}
+			//for (auto &player : gameData->players) {
+			//	if (!player.active || player.lives == 0) {
+			//		continue;
+			//	}
 
-				playersAlive = true;
+			//	playersAlive = true;
 
-				playerLeft = player.posX;
-				playerRight = player.posX + player.width;
-				playerTop = player.posY;
-				playerBottom = player.posY + player.height;
+			//	playerLeft = player.posX;
+			//	playerRight = player.posX + player.width;
+			//	playerTop = player.posY;
+			//	playerBottom = player.posY + player.height;
 
-				//ball hit player on top
-				if ((ballTop < playerTop && playerTop < ballBottom) &&
-					(playerLeft <= ballLeft || playerLeft <= ballRight))
-				{
-					ball.up = !ball.up;
-					ball.playerId = player.id;
-				}
+			//	//ball hit player on top
+			//	if ((ballTop < playerTop && playerTop < ballBottom) &&
+			//		(playerLeft <= ballLeft || playerLeft <= ballRight))
+			//	{
+			//		ball.up = !ball.up;
+			//		ball.playerId = player.id;
+			//	}
 
-				if ((ballLeft < playerRight && playerRight < ballRight) ||
-					(ballLeft < playerLeft && playerLeft < ballRight) &&
-					(playerTop <= ballTop || playerBottom >= ballBottom))
-				{
-					ball.up = !ball.up;
-					ball.right = !ball.right;
-					ball.playerId = player.id;
-				}
-			}
+			//	if ((ballLeft < playerRight && playerRight < ballRight) ||
+			//		(ballLeft < playerLeft && playerLeft < ballRight) &&
+			//		(playerTop <= ballTop || playerBottom >= ballBottom))
+			//	{
+			//		ball.up = !ball.up;
+			//		ball.right = !ball.right;
+			//		ball.playerId = player.id;
+			//	}
+			//}
 
-			if (!playersAlive) {
-				gameData->gameState = GAME_OVER;
-				Server::gameData->setGameEvent();
-				break;
-			}
+			//if (!playersAlive) {
+			//	gameData->gameState = GAME_OVER;
+			//	Server::gameData->setGameEvent();
+			//	break;
+			//}
 
 			//Verify if ball is in one of the of the limits, so it can change position
-			if ((ball.posX + ball.width) >= MAX_GAME_WIDTH || ball.posX == MIN_GAME_WIDTH) {
+			if ((ball.posX + ball.width) >= MAX_GAME_WIDTH || ball.posX <= MIN_GAME_WIDTH) {
 				ball.right = !ball.right;
 			}
 
 			if ((ball.posY + ball.height) >= MAX_GAME_HEIGHT) {
-				ball.active = false;
+				ball.up = !ball.up;
+				/*ball.active = false;
 
 				if (ball.playerId >= 0)
-					gameData->players[ball.playerId].lives--;
+					gameData->players[ball.playerId].lives--;*/
 			}
 
-			if (ball.posY == MIN_GAME_HEIGHT) {
+			if (ball.posY <= MIN_GAME_HEIGHT) {
 				ball.up = !ball.up;
 			}
 		}
 
-		//Verify if there are still balls in the game
-		ballAvailable = false;
+		//////Verify if there are still balls in the game
+		////ballAvailable = false;
 
-		for (auto & ball : gameData->balls) {
-			if (ball.active)
-				ballAvailable = true;
-		}
-		//If theres no balls available, check for palyers with lives so another ball can spawn
-		if (!ballAvailable) {
-			for (auto & player : gameData->players) {
-				if (player.active) {
-					if (player.lives > 0) {
-						Server::gameData->setupBall();
-						ballAvailable = true;
-						break;
-					}
-				}
-			}
-		}
+		////for (auto & ball : gameData->balls) {
+		////	if (ball.active)
+		////		ballAvailable = true;
+		////}
+		//////If theres no balls available, check for palyers with lives so another ball can spawn
+		////if (!ballAvailable) {
+		////	for (auto & player : gameData->players) {
+		////		if (player.active) {
+		////			if (player.lives > 0) {
+		////				Server::gameData->setupBall();
+		////				ballAvailable = true;
+		////				break;
+		////			}
+		////		}
+		////	}
+		////}
 
 		Server::gameData->releaseAccessGameData();
 		Server::clients.broadcastGameData();
 
-		if (!ballAvailable) {
+		/*if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
 		}
 
 		if (gameData->gameState != RUNNING)
-			break;
+			break;*/
 	}
 
 	tcout << "Ball Thread Ended" << endl;
@@ -330,7 +331,7 @@ DWORD WINAPI GameThread(LPVOID args) {
 	int difficulty = 0;
 	GameData * gameData = Server::gameData->getGameData();
 
-	while (CONTINUE) {
+	while (*CONTINUE) {
 		Server::gameData->setGameDataState(RUNNING);
 		Server::gameData->setupBall();
 
