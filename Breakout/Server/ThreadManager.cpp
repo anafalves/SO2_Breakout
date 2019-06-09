@@ -28,8 +28,8 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 		return -1;
 	}
 
+	Server::sharedMemory.waitForAllClientsReady();
 	Server::gameData->lockAccessGameData();
-	Server::sharedMemory.waitForUpdateFlags();
 
 	for (auto & b : gameData->bonuses) {
 		if (!b.active) {
@@ -39,17 +39,17 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 			break;
 		}
 	}
-	Server::sharedMemory.setUpdate();
+
 	Server::gameData->releaseAccessGameData();
+	Server::clients.broadcastGameData();
 
 	if (bonus == nullptr)
 		return 1;
 
 	while (bonus->active) {
 		WaitForSingleObject(hTimer, INFINITE);
-
+		Server::sharedMemory.waitForAllClientsReady();
 		Server::gameData->lockAccessGameData();
-		Server::sharedMemory.waitForUpdateFlags();
 
 		bonus->posY += Server::config.getMovementSpeed();
 
@@ -85,12 +85,13 @@ DWORD WINAPI BonusHandler(LPVOID args) {
 
 				bonus->active = false;
 				Server::gameData->releaseAccessGameData();
-				Server::sharedMemory.setUpdate();
+				Server::clients.broadcastGameData();
 				return 0;
 			}
 		}
-		Server::sharedMemory.setUpdate();
+
 		Server::gameData->releaseAccessGameData();
+		Server::clients.broadcastGameData();
 	}
 
 	return 0;
@@ -124,7 +125,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 		return -1;
 	}
 
-	if (!SetWaitableTimer(hTimer, &liDueTime, 100, NULL, NULL, 0)) {
+	if (!SetWaitableTimer(hTimer, &liDueTime, 20, NULL, NULL, 0)) {
 		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
 		return -1;
 	}
@@ -132,8 +133,8 @@ DWORD WINAPI BallManager(LPVOID args) {
 	while (*CONTINUE)
 	{
 		WaitForSingleObject(hTimer, INFINITE);
+		Server::sharedMemory.waitForAllClientsReady();
 		Server::gameData->lockAccessGameData();
-		Server::sharedMemory.waitForUpdateFlags();
 
 		ballAvailable = false;
 		playersAlive = false;
@@ -305,8 +306,9 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 		}
 
-		Server::sharedMemory.setUpdate();
 		Server::gameData->releaseAccessGameData();
+		tcout << "notified users" << endl;
+		Server::clients.broadcastGameData();
 
 		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
@@ -331,6 +333,7 @@ DWORD WINAPI GameThread(LPVOID args) {
 
 	while (CONTINUE) {
 		Server::gameData->setGameDataState(RUNNING);
+		Server::gameData->setupBall();
 
 		// 1 - Position users
 		//If there are no clients, stop the thread.
@@ -365,7 +368,7 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	Player * player = nullptr;
 	ClientMsg request;
 	ServerMsg reply;
-	HANDLE flag;
+	HANDLE update, ready;
 
 	*CONTINUE = true;
 	
@@ -415,13 +418,12 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 						break;
 					}
 
-					reply.update_id = Server::sharedMemory.addClientUpdateFlag(flag); //Creats a handle to sync server write and local clirne read operations
-					if (reply.update_id < 0) {
+					if(Server::sharedMemory.addNotifiers(ready, update, request.message.name) == false){
 						reply.type = DENY_SERVER_FULL;
 						Server::sharedMemory.writeMessage(reply);
 						break;
 					}
-					Server::clients.AddClient(request.message.name, player, flag, reply.id);
+					Server::clients.AddLocalClient(request.message.name, player, ready, update, reply.id);
 					
 					reply.type = ACCEPT;
 					_tcscpy_s(reply.message.receiver, request.message.name);
@@ -617,7 +619,7 @@ DWORD WINAPI RemoteClientHandler(LPVOID args) {
 					}
 					tcout << endl << "Client: " << request.message.name << " -> " << reply.type << endl;
 
-					Server::clients.AddClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
+					Server::clients.AddRemoteClient(request.message.name, player, hPipe, hGameDataPipe, reply.id);
 					player = Server::clients.getClientPlayer(reply.id);
 					break;
 				}
@@ -704,28 +706,6 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 	return 0;
 }
 
-//This thread handles the updates for the clients
-DWORD WINAPI GameDataBroadcast(LPVOID args) {
-	bool * CONTINUE = (bool *)args;
-	HANDLE update[2];
-
-	(*CONTINUE) = true;
-	update[0] = Server::sharedMemory.hUpdateEvent;
-	update[1] = Server::sharedMemory.hExitEvent;
-
-	while (*CONTINUE) {
-		WaitForMultipleObjects(2,update,FALSE,INFINITE);
-		Server::clients.broadcastGameData();
-	}
-
-	Server::gameData->setGameDataState(SHUTDOWN);
-	Server::sharedMemory.setUpdate();
-	Server::clients.broadcastGameData();
-
-	tcout << "Game Broadcast Thread Ended" << endl;
-
-	return 0;
-}
 
 bool ThreadManager::startLocalClientHandler(){
 	if (localClientHandlerRunning) {
@@ -784,30 +764,13 @@ bool ThreadManager::startBallThread() {
 	return true;
 }
 
-bool ThreadManager::startGameDataBroadcaster() {
-	if (broadcastRunning) {
-		return false;
-	}
-
-	hBroadcastThread = CreateThread(nullptr, 0, GameDataBroadcast, (LPVOID)&broadcastRunning, 0, nullptr);
-	if (hBroadcastThread == nullptr) {
-		return false;
-	}
-
-	return true;
-}
-
-bool ThreadManager::startGame() {
+bool ThreadManager::startGameThread() {
 
 	hGameThread = CreateThread(nullptr, 0, GameThread, (LPVOID)&gameThreadRunning, 0, nullptr);
 	if (hGameThread == nullptr)
 		return false;
 
 	return true;
-}
-
-bool ThreadManager::isBroadcastRunning() const {
-	return broadcastRunning;
 }
 
 bool ThreadManager::isBallThreadRunning() const {
@@ -843,10 +806,6 @@ void ThreadManager::endGame()
 	gameThreadRunning = false;
 }
 
-void ThreadManager::endGameDataBroadcasterThread(){
-	 broadcastRunning = false;
-}
-
 void ThreadManager::waitForRemoteConnectionThread() {
 	tstring pipeName(TEXT("\\\\.\\") + PipeConstants::MESSAGE_PIPE_NAME);
 	HANDLE hPipeMessage = CreateFile(
@@ -864,11 +823,6 @@ void ThreadManager::waitForRemoteConnectionThread() {
 	CloseHandle(hPipeMessage);
 	WaitForSingleObject(hRemoteConnectionHandler, INFINITE);
 	CloseHandle(hRemoteConnectionHandler);
-}
-
-void ThreadManager::waitForGameDataBroadcaster() {
-	WaitForSingleObject(hBroadcastThread, INFINITE);
-	CloseHandle(hBroadcastThread);
 }
 
 void ThreadManager::waitForLocalClientThread() {
@@ -890,9 +844,9 @@ void ThreadManager::waitForBonusesThreads() {
 		CloseHandle(thread);
 	}
 }
+
 void ThreadManager::waitForGameThread()
 {
 	WaitForSingleObject(hGameThread,INFINITE);
 	CloseHandle(hGameThread);
 }
-;

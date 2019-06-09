@@ -3,7 +3,15 @@
 
 SharedMemoryManager::SharedMemoryManager()
 {
-	updateCounter = 1;
+	hClientReadyMutex = CreateMutex(NULL, FALSE, NULL);
+	if (hClientReadyMutex == NULL) {
+		throw EXCEPTION_ACCESS_VIOLATION;
+	}
+	
+	hUpdateMutex = CreateMutex(NULL, FALSE, NULL);
+	if (hUpdateMutex == NULL) {
+		throw EXCEPTION_ACCESS_VIOLATION;
+	}
 }
 
 SharedMemoryManager::~SharedMemoryManager()
@@ -12,7 +20,6 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hServerSemFilled);
 	CloseHandle(hClientSemEmpty);
 	CloseHandle(hClientSemFilled);
-	CloseHandle(hUpdateEvent);
 	CloseHandle(hExitEvent);
 
 	UnmapViewOfFile(viewClientBuffer);
@@ -23,45 +30,104 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hServerBuffer);
 	CloseHandle(hGameData);
 
-	for (auto &handle: updateFlags) {
+	CloseHandle(hClientReadyMutex);
+
+	for (auto &handle : updateNotifications) {
+		CloseHandle(handle);
+	}
+
+	for (auto &handle : clientReadyNotifications) {
 		CloseHandle(handle);
 	}
 }
 
-void SharedMemoryManager::setUpdate() {
-	SetEvent(hUpdateEvent);
-	ResetEvent(hUpdateEvent);
-}
-
-int SharedMemoryManager::addClientUpdateFlag(HANDLE & flag) {
-	tstring mystr(TEXT("UpdateFlag_") + updateCounter);
+void SharedMemoryManager::setUpdate(HANDLE & handle) const {
+	if (handle == NULL || handle == INVALID_HANDLE_VALUE)
+		return;
 	
-	flag = CreateEvent(NULL, FALSE, FALSE, mystr.c_str());
-	if (flag == INVALID_HANDLE_VALUE) {
-		return -1;
-	}
+	WaitForSingleObject(hUpdateMutex, INFINITE);
+	
+	SetEvent(handle);
 
-	updateFlags.push_back(flag);
-	updateCounter++;
+	ReleaseMutex(hUpdateMutex);
 
-	return updateCounter - 1;
-}
-
-void SharedMemoryManager::removeClientUpdateFlag(HANDLE flag) {
-	for (size_t i = 0; i < updateFlags.size(); i++) {
-		if (updateFlags[i] == flag) {
-			updateFlags.erase(updateFlags.begin() + i);
-			break;
-		}
-	}
-}
-
-void SharedMemoryManager::waitForUpdateFlags(){
-	WaitForMultipleObjects(updateFlags.size(), updateFlags.data(), TRUE, INFINITE);
 }
 
 GameData * SharedMemoryManager::getGameData() const {
 	return viewGameData;
+}
+
+bool SharedMemoryManager::addNotifiers(HANDLE & clientReady, HANDLE & updateReady, tstring name)
+{
+	tstring update(SharedMemoryConstants::EVENT_UPDATE + name);
+	tstring clientNotif(SharedMemoryConstants::EVENT_CLIENT_NOTIFICATION + name);
+
+	updateReady = CreateEvent(NULL, FALSE, FALSE, update.c_str());
+	if (updateReady == INVALID_HANDLE_VALUE) {
+		return false;
+	}
+
+	clientReady = CreateEvent(NULL, FALSE, FALSE, clientNotif.c_str());
+	if (clientReady == INVALID_HANDLE_VALUE) {
+		CloseHandle(updateReady);
+		return false;
+	}
+
+	WaitForSingleObject(hClientReadyMutex, INFINITE);
+	clientReadyNotifications.push_back(clientReady);
+	ReleaseMutex(hClientReadyMutex);
+
+
+	WaitForSingleObject(hUpdateMutex, INFINITE);
+	updateNotifications.push_back(updateReady);
+	ReleaseMutex(hUpdateMutex);
+
+	return true;
+}
+
+void SharedMemoryManager::removeNotifiers(HANDLE & updateReady, HANDLE & clientReady)
+{
+	WaitForSingleObject(hUpdateMutex, INFINITE);
+
+	for (size_t i = 0; i < updateNotifications.size(); i++) {
+		if (updateNotifications[i] == updateReady) {
+			CloseHandle(updateNotifications[i]);
+			updateNotifications.erase(updateNotifications.begin() + i);
+			break;
+		}
+	}
+
+	ReleaseMutex(hUpdateMutex);
+
+	WaitForSingleObject(hClientReadyMutex, INFINITE);
+
+	for (size_t i = 0; i < clientReadyNotifications.size(); i++) {
+		if (clientReadyNotifications[i] == clientReady) {
+			CloseHandle(clientReadyNotifications[i]);
+			clientReadyNotifications.erase(clientReadyNotifications.begin() + i);
+			break;
+		}
+	}
+
+	ReleaseMutex(hClientReadyMutex);
+}
+
+void SharedMemoryManager::waitForAllClientsReady()
+{
+	HANDLE notification[2];
+	notification[1] = hExitEvent;
+
+	WaitForSingleObject(hClientReadyMutex, INFINITE);
+	for (auto & handle : clientReadyNotifications) {
+		notification[0] = handle;
+
+		if (WaitForMultipleObjects(2, notification, FALSE, 3000) == WAIT_TIMEOUT) {
+			ReleaseMutex(hClientReadyMutex);
+			Server::clients.removeClient(handle);
+			return;
+		}
+	}
+	ReleaseMutex(hClientReadyMutex);
 }
 
 int SharedMemoryManager::initSharedMemory() {
@@ -129,9 +195,9 @@ int SharedMemoryManager::initSharedMemory() {
 	}
 	
 	//Set all newly allocated shared memory to 0 ( clear memory )
-	memset(viewGameData, 0, sizeof(GameData));
-	memset(viewClientBuffer, 0, sizeof(ClientMsgBuffer));
-	memset(viewServerBuffer, 0, sizeof(ServerMsgBuffer));
+	SecureZeroMemory(viewGameData, sizeof(GameData));
+	SecureZeroMemory(viewClientBuffer, sizeof(ClientMsgBuffer));
+	SecureZeroMemory(viewServerBuffer, sizeof(ServerMsgBuffer));
 
 	if (initSemaphores() < 0) {
 		return -2;
@@ -168,13 +234,6 @@ int SharedMemoryManager::initSemaphores() {
 	hClientSemFilled = CreateSemaphore(NULL, 0, MAX_MESSAGE_BUFFER_SIZE,
 						SharedMemoryConstants::SEM_CLIENT_FILLED.c_str());
 	if (hClientSemFilled == NULL)
-	{
-		this->~SharedMemoryManager();
-		return -1;
-	}
-
-	hUpdateEvent = CreateEvent(NULL,TRUE, FALSE, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
-	if (hUpdateEvent == NULL)
 	{
 		this->~SharedMemoryManager();
 		return -1;

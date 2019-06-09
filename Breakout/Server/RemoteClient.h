@@ -10,9 +10,10 @@ private:
 public:
 	RemoteClient(tstring username, Player * p, HANDLE pipe, HANDLE hGamedata);
 
+	HANDLE & getPrimaryHandle();
 	void sendUpdate();
 
-	~RemoteClient() {
+	virtual ~RemoteClient() {
 		FlushFileBuffers(hPipe);
 		FlushFileBuffers(hPipeGameData);
 		DisconnectNamedPipe(hPipe);

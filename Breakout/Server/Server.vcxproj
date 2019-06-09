@@ -142,7 +142,6 @@
     <ClInclude Include="LocalClient.h" />
     <ClInclude Include="RemoteClient.h" />
     <ClInclude Include="ServerInterface.h" />
-    <ClInclude Include="Spectator.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="GeneralConstants.h" />

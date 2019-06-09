@@ -14,10 +14,11 @@ private:
 
 public:
 	ClientManager();
-	void AddClient(std::tstring name, Player * p, HANDLE flag, int & myId);
-	void AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId);
+	void AddLocalClient(std::tstring name, Player * p, HANDLE & resourceFreed, HANDLE & updateReady, int & myId);
+	void AddRemoteClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId);
 	bool removeClient(std::tstring name);
 	bool removeClient(int id);
+	bool removeClient(const HANDLE & handle);
 	Player * getClientPlayer(int id);
 
 	tstring getClientsAsString() const;
@@ -28,7 +29,7 @@ public:
 	void broadcastGameData();
 	const vector<Client *> getClientArray() const;
 
-	~ClientManager();
+	virtual ~ClientManager();
 };
 
 tostream& operator <<(tostream & os, const ClientManager & clients);

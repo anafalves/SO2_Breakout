@@ -7,7 +7,6 @@ class CLIENT_API LocalCLient : public Client
 {
 private:
 	SharedMemoryManager * sharedMemmoryContent;
-	int update_id;
 
 	ServerMsg receiveMessageLogin(tstring name);
 public:
@@ -18,7 +17,5 @@ public:
 	bool sendMessage(ClientMsg msg);
 	ServerMsg receiveMessage();
 
-	void setUpdateId(int id);
-	int getUpdateId() const;
 	bool isReady() const;
 };

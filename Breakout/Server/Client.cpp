@@ -30,10 +30,6 @@ Player * Client::getPlayer() {
 	return player;
 }
 
-void Client::sendUpdate() {
-	//Empty definition made on purpose so that the Local client won't have to override this
-}
-
 tstring Client::getAsString() {
 	tstringstream tss;
 

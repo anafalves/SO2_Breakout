@@ -14,9 +14,9 @@ int LocalCLient::login(TCHAR * name)
 
 	if (answer.type == ACCEPT) {
 		setClientID(answer.id);
-		setUpdateId(answer.update_id);
 
-		if (sharedMemmoryContent->getUpdateFlag(update_id) == false) {
+		if (sharedMemmoryContent->getResourceReadyNotifier(name) == false) {
+			msg.id = getClientID();
 			msg.type = LEAVE;
 			sendMessage(msg);
 			return CONNECTION_ERROR;
@@ -36,17 +36,16 @@ int LocalCLient::login(TCHAR * name)
 
 GameData LocalCLient::receiveBroadcast() {
 	HANDLE update[2];
-	GameData data;
 
 	update[0] = sharedMemmoryContent->hUpdateEvent;
 	update[1] = sharedMemmoryContent->hExitEvent;
 
 	SetEvent(sharedMemmoryContent->hReadyForUpdate);
+
 	WaitForMultipleObjects(2, update, FALSE, INFINITE);
-	data = (*sharedMemmoryContent->viewGameData);
-	SetEvent(sharedMemmoryContent->hReadyForUpdate);
+
+	return (*sharedMemmoryContent->viewGameData);
 	
-	return data;
 }
 
 bool LocalCLient::sendMessage(ClientMsg msg)
@@ -154,20 +153,11 @@ LocalCLient::LocalCLient()
 	:Client()
 {
 	sharedMemmoryContent = new SharedMemoryManager();
-	update_id = 0;
 }
 
 LocalCLient::~LocalCLient()
 {
 	delete sharedMemmoryContent;
-}
-
-void LocalCLient::setUpdateId(int id) {
-	update_id = id;
-}
-
-int LocalCLient::getUpdateId() const {
-	return update_id;
 }
 
 bool LocalCLient::isReady() const

@@ -112,9 +112,9 @@ void GameConfig::setMaxPlayerCount(int numberOfPlayers) {
 
 void GameConfig::setMovementSpeed(int speed) {
 	if (speed < initialMovementSpeed * 0.6)
-		speed = (int) initialMovementSpeed * 0.6;
+		speed = (int) (initialMovementSpeed * 0.6);
 	else if (speed > initialMovementSpeed * 1.5)
-		speed = (int) initialMovementSpeed * 1.5;
+		speed = (int) (initialMovementSpeed * 1.5);
 
 	movementSpeed = speed;
 }

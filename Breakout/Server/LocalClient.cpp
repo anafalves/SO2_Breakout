@@ -1,12 +1,27 @@
 #include "LocalClient.h"
 #include "Server.h"
 
-LocalClient::~LocalClient()
+const HANDLE LocalClient::getResourceFreedNotifier() const
 {
-	Server::sharedMemory.removeClientUpdateFlag(updateFlag);
-	CloseHandle(updateFlag);
+	return notifyResourceFreed;
 }
 
-const HANDLE LocalClient::getFlag() const {
-	return updateFlag;
+void LocalClient::sendUpdate() {
+	SetEvent(notifyUpdate);
+}
+
+const HANDLE LocalClient::getUpdateReadyNotifier() const
+{
+	return notifyUpdate;
+}
+
+HANDLE & LocalClient::getPrimaryHandle() {
+	return notifyResourceFreed;
+}
+
+LocalClient::~LocalClient()
+{
+	Server::sharedMemory.removeNotifiers(notifyUpdate, notifyResourceFreed);
+	CloseHandle(notifyResourceFreed);
+	CloseHandle(notifyUpdate);
 }

@@ -26,7 +26,9 @@ SharedMemoryManager::~SharedMemoryManager()
 	CloseHandle(hGameData);
 	CloseHandle(hExitEvent);
 	CloseHandle(hReadyForUpdate);
+
 	CloseHandle(hUpdateEvent);
+	CloseHandle(hReadyForUpdate);
 }
 
 void SharedMemoryManager::initSharedMemory() {
@@ -125,13 +127,6 @@ void SharedMemoryManager::initSyncVariables() {
 		this->~SharedMemoryManager();
 		ready = false;
 	}
-	
-	hUpdateEvent = OpenEvent(EVENT_ALL_ACCESS, false, SharedMemoryConstants::EVENT_GAMEDATA_UPDATE.c_str());
-	if (hUpdateEvent == NULL)
-	{
-		this->~SharedMemoryManager();
-		ready = false;
-	}
 
 	hExitEvent = CreateEvent(NULL, false, false, NULL);
 	if (hExitEvent == NULL)
@@ -153,11 +148,27 @@ void SharedMemoryManager::initSyncVariables() {
 	}
 }
 
-bool SharedMemoryManager::getUpdateFlag(int id) {
-	tstring updateFlag(TEXT("UpdateFlag_") + id);
-	hReadyForUpdate = OpenEvent(EVENT_ALL_ACCESS, NULL, updateFlag.c_str());
-	if (hReadyForUpdate == INVALID_HANDLE_VALUE)
+
+bool SharedMemoryManager::getResourceReadyNotifier(tstring name)
+{
+	tstring clientReady(SharedMemoryConstants::EVENT_CLIENT_NOTIFICATION + name);
+	tstring updateReady(SharedMemoryConstants::EVENT_UPDATE + name);
+
+	tcout << "update: " << updateReady << endl;
+	tcout << "cli: " << clientReady << endl;
+
+	hReadyForUpdate = OpenEvent(EVENT_ALL_ACCESS, NULL, clientReady.c_str());
+	if (hReadyForUpdate == NULL) {
+		ready = false;
 		return false;
+	}
+	
+	hUpdateEvent = OpenEvent(EVENT_ALL_ACCESS, NULL, updateReady.c_str());
+	if (hUpdateEvent == NULL) {
+		CloseHandle(hReadyForUpdate);
+		ready = false;
+		return false;
+	}
 
 	return true;
 }

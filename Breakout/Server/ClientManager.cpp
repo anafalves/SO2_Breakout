@@ -21,7 +21,8 @@ Player * ClientManager::getClientPlayer(int id) {
 	return nullptr;
 }
 
-void ClientManager::AddClient(std::tstring name, Player * p, HANDLE flag, int &myId) {
+void ClientManager::AddLocalClient(std::tstring name, Player * p, HANDLE & resourceFreed, HANDLE & updateReady, int &myId)
+{
 	HANDLE modify[2];
 
 	modify[0] = hClientMutex;
@@ -29,14 +30,16 @@ void ClientManager::AddClient(std::tstring name, Player * p, HANDLE flag, int &m
 
 	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
 
-	LocalClient * temp = new LocalClient(name, flag, p);
+	LocalClient * temp = new LocalClient(name, resourceFreed, updateReady, p);
 	myId = temp->getId();
 	clients.push_back(temp);
 
 	ReleaseMutex(hClientMutex);
 }
 
-void ClientManager::AddClient(std::tstring name, Player * p, HANDLE hPipe, HANDLE hGameDataPipe, int &myId){
+void ClientManager::AddRemoteClient(std::tstring name, Player * p, 
+							HANDLE hPipe, HANDLE hGameDataPipe, int &myId)
+{
 	HANDLE modify[2];
 
 	modify[0] = hClientMutex;
@@ -82,6 +85,29 @@ bool ClientManager::removeClient(int id) {
 
 	for (unsigned i = 0; i < clients.size(); i++) {
 		if (clients[i]->getId() == id) {
+			delete clients[i];
+			clients.erase(clients.begin() + i);
+			ReleaseMutex(hClientMutex);
+			return true;
+		}
+	}
+
+	ReleaseMutex(hClientMutex);
+
+	return false;
+}
+
+bool ClientManager::removeClient(const HANDLE & primaryHandle)
+{
+	HANDLE modify[2];
+
+	modify[0] = hClientMutex;
+	modify[1] = Server::sharedMemory.hExitEvent;
+
+	WaitForMultipleObjects(2, modify, FALSE, INFINITE);
+
+	for (unsigned i = 0; i < clients.size(); i++) {
+		if (clients[i]->getPrimaryHandle() == primaryHandle) {
 			delete clients[i];
 			clients.erase(clients.begin() + i);
 			ReleaseMutex(hClientMutex);

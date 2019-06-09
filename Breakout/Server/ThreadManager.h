@@ -27,9 +27,6 @@ private:
 	HANDLE hLocalClientHandler;
 	bool localClientHandlerRunning;
 
-	HANDLE hBroadcastThread;
-	bool broadcastRunning;
-
 	HANDLE hRemoteConnectionHandler;
 	bool remoteConnectionHandlerRunning;
 
@@ -42,9 +39,6 @@ public:
 
 		hLocalClientHandler = nullptr;
 		localClientHandlerRunning = false;
-
-		hBroadcastThread = nullptr;
-		broadcastRunning = false;
 
 		hRemoteConnectionHandler = nullptr;
 		remoteConnectionHandlerRunning = false;

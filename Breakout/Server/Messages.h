@@ -37,7 +37,6 @@ typedef union {
 	TCHAR name[MAX_NAME_LENGHT];
 	int preciseMove;
 	int basicMove;
-	int update_id;
 }ClientRequest;
 
 typedef struct{
@@ -57,7 +56,6 @@ typedef union{
 typedef struct {
 	int type;
 	int id;
-	int update_id;
 	ServerResponse message;
 }ServerMsg;
 //end
