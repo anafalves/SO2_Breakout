@@ -125,7 +125,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 		return -1;
 	}
 
-	if (!SetWaitableTimer(hTimer, &liDueTime, 20, NULL, NULL, 0)) {
+	if (!SetWaitableTimer(hTimer, &liDueTime, 40, NULL, NULL, 0)) {
 		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
 		return -1;
 	}
@@ -270,19 +270,19 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
-			if (ball.posX == MAX_GAME_WIDTH || ball.posX  == MIN_GAME_WIDTH) {
+			if ((ball.posX + ball.width) >= MAX_GAME_WIDTH || ball.posX == MIN_GAME_WIDTH) {
 				ball.right = !ball.right;
 			}
 
-			if ((ball.posY + ball.height) == MIN_GAME_HEIGHT) {
-				ball.up = !ball.up;
-			}
-
-			if (ball.posY == MAX_GAME_HEIGHT) {
+			if ((ball.posY + ball.height) >= MAX_GAME_HEIGHT) {
 				ball.active = false;
 
-				if(ball.playerId >= 0)
+				if (ball.playerId >= 0)
 					gameData->players[ball.playerId].lives--;
+			}
+
+			if (ball.posY == MIN_GAME_HEIGHT) {
+				ball.up = !ball.up;
 			}
 		}
 
@@ -307,7 +307,6 @@ DWORD WINAPI BallManager(LPVOID args) {
 		}
 
 		Server::gameData->releaseAccessGameData();
-		tcout << "notified users" << endl;
 		Server::clients.broadcastGameData();
 
 		if (!ballAvailable) {
@@ -371,7 +370,6 @@ DWORD WINAPI SharedMemClientHandler(LPVOID args) {
 	HANDLE update, ready;
 
 	*CONTINUE = true;
-	
 
 	while (*CONTINUE && ACTIVE) {
 		request = Server::sharedMemory.readMessage();

@@ -35,11 +35,9 @@ void ConfigHandler::handleCommand(tstring command, tstring value) {
 
 	if (command == CommandConstants::bonusDropRate)
 	{
-		double convertedDouble;
-
-		tss >> convertedDouble;
+		tss >> convertedValue;
 		if (!tss.fail()) {
-			config.setBonusDropRate(convertedDouble);
+			config.setBonusDropRate(convertedValue);
 		}
 	}
 	else if (command == CommandConstants::levelCount)

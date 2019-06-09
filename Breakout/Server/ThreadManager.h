@@ -45,12 +45,10 @@ public:
 	};
 
 	bool isBallThreadRunning() const;
-	bool isBroadcastRunning() const;
 	bool isLocalClientHandlerRunning() const;
 	bool isRemoteConnectionHandlerRunning() const;
 	bool isGameRunning() const;
 
-	bool startGameDataBroadcaster();
 	bool startGameThread();
 	bool startLocalClientHandler();
 	bool startRemoteConnectionHandler();
@@ -58,12 +56,10 @@ public:
 	bool startBonusThread(Tile * tile);
 
 	void endBallThread();
-	void endGameDataBroadcasterThread();
 	void endLocalClientHandler();
 	void endRemoteConnectionHandler();
 	void endGame();
 
-	void waitForGameDataBroadcaster();
 	void waitForLocalClientThread();
 	void waitForRemoteConnectionThread();
 	void waitForBallThread();
