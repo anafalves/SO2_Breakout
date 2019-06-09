@@ -135,8 +135,24 @@
     <ResourceCompile Include="Client.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Images\background2 (1).bmp" />
     <Image Include="Images\bigIcon.bmp" />
     <Image Include="Images\bigIcon.ico" />
+    <Image Include="images\bitmap5.bmp" />
+    <Image Include="Images\Game\11-Breakout-Tiles.bmp" />
+    <Image Include="Images\Game\ball.bmp" />
+    <Image Include="images\game\bitmap12.bmp" />
+    <Image Include="Images\Game\broken_tile.bmp" />
+    <Image Include="Images\Game\fast.bmp" />
+    <Image Include="Images\Game\heart.bmp" />
+    <Image Include="Images\Game\Nova pasta\ball.bmp" />
+    <Image Include="Images\Game\platform.bmp" />
+    <Image Include="Images\Game\platform_other.bmp" />
+    <Image Include="Images\Game\slow.bmp" />
+    <Image Include="Images\Game\solidTile.bmp" />
+    <Image Include="Images\Game\tile.bmp" />
+    <Image Include="Images\Game\triple.bmp" />
+    <Image Include="images\icon5.ico" />
     <Image Include="Images\small_icon.ico" />
   </ItemGroup>
   <ItemGroup>

@@ -45,6 +45,54 @@
     <Image Include="Images\bigIcon.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Images\background2 (1).bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\ball.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="images\bitmap5.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\broken_tile.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\fast.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\heart.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\slow.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\solidTile.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\tile.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\triple.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="images\game\bitmap12.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\11-Breakout-Tiles.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="images\icon5.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\Nova pasta\ball.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\platform.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Game\platform_other.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Images\cursor1.cur">
