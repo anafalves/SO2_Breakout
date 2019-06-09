@@ -17,6 +17,18 @@
 #define IDB_BITMAP1                     126
 #define IDI_ICON3                       127
 #define IDI_ICON4                       128
+#define IDB_BITMAP3                     132
+#define IDB_BITMAP4                     133
+#define IDB_BITMAP5                     135
+#define IDB_BITMAP6                     136
+#define IDB_BITMAP7                     137
+#define IDB_BITMAP8                     138
+#define IDB_BITMAP9                     139
+#define IDB_BITMAP10                    140
+#define IDB_BITMAP11                    141
+#define IDB_BITMAP12                    146
+#define IDB_BITMAP13                    147
+#define IDB_BITMAP14                    148
 #define IDC_EDIT1                       1001
 #define IDC_IPADDRESS1                  1002
 #define IDC_OPTION_LOCAL                1006
@@ -37,7 +49,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         40006
 #define _APS_NEXT_CONTROL_VALUE         1010
 #define _APS_NEXT_SYMED_VALUE           101

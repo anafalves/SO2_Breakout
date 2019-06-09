@@ -4,15 +4,19 @@
 #include <string>
 #include "../ClientDLL/Communication.h"
 #include "resource.h"
+#include "../Server/GameData.h"
+
 
 #define WIND_WIDTH 1500
-#define WIND_HEIGHT 850
+#define WIND_HEIGHT 800
 #define Game_WIDTH 1200
 #define Info_WIDTH 300
 
 LRESULT CALLBACK MainProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK LoginProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI ReceiveGameThread(LPVOID * args);
+
+GameData game;
 
 TCHAR szProgName[] = TEXT("Breakout");
 TCHAR staticTxtForMainWindow[4][50] = {
@@ -25,14 +29,36 @@ int maxX = GetSystemMetrics(SM_CXSCREEN);
 int maxY = GetSystemMetrics(SM_CYSCREEN);
 
 Client * client;
+TCHAR username[100];
+COLORREF transparent_color = RGB(1, 1, 1); //TODO:
 
+///////// Bitmaps' Handles ////////
 HBITMAP hBackground;
-BITMAP background;
+HBITMAP hBall;
+HBITMAP hNormalGoodTile;
+HBITMAP hNormalDamagedTile;
+HBITMAP hBonusTile;
+HBITMAP hPlatformPlayer;
+HBITMAP hPlatformOthers;
+HBITMAP hSpeedUpBonus;
+HBITMAP hSpeedDownBonus;
+HBITMAP hLifeBonus;
+HBITMAP hTripleBonus;
+HBITMAP hUnbrokenTile;
+
+void LoadResources();
+void printResources();
+//////////////////////////////////
+
+HDC memdcAux;
+HDC paint_hdc;
 HDC memdcGame;
 HDC memdcData;
 UINT leftKey = TEXT('A');
 UINT rightKey = TEXT('D');
 
+bool CONTINUE = false;
+bool CONTINUE2 = true;
 bool registerWindow(HINSTANCE hInst) {
 	WNDCLASSEX wcApp;
 
@@ -86,9 +112,31 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR lpCmdLine, int
 	return((int)lpMsg.wParam);
 }
 
+//thread
+DWORD WINAPI GetUpdates(LPVOID args) {
+	HWND hWnd = (HWND) args;
+
+	do {
+		continue;
+	} while (!CONTINUE && CONTINUE2);
+
+	while (CONTINUE) {
+		game = client->receiveBroadcast();
+	
+		InvalidateRect(hWnd, NULL, TRUE);	
+	}
+	return 0;
+}
+
+void printGameDataOnScreen(HWND hWnd) {
+	HANDLE hUpdate;
+	
+	hUpdate = CreateThread(NULL, 0, GetUpdates, (LPVOID) hWnd,0, NULL);
+}
+
 BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 	WPARAM wParam, LPARAM lParam) {
-	TCHAR username[100];
+
 	TCHAR key[10];
 	TCHAR IP[15];
 	TCHAR phrase[120];
@@ -103,7 +151,7 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 		SetDlgItemText(hWnd, IDC_EDIT1, TEXT("Preencha username"));
 		SetDlgItemText(hWnd, IDC_EDIT_LEFT, TEXT("A"));
 		SetDlgItemText(hWnd, IDC_EDIT_RIGHT, TEXT("D"));
-		SendDlgItemMessage(hWnd, IDC_OPTION_REMOTE, BM_SETCHECK, 1, 0);
+		SendDlgItemMessage(hWnd, IDC_OPTION_LOCAL, BM_SETCHECK, 1, 0);
 		remote = NULL;
 		local = NULL;
 		return TRUE;
@@ -161,6 +209,9 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 				}
 				else {
 					client = remote;
+					CONTINUE = true;
+					CONTINUE2 = false;
+					client->CONTINUE = true;
 				}
 			}
 			else
@@ -196,15 +247,18 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 					}
 					else {
 						client = local;
+						CONTINUE = true;
+						CONTINUE2 = false;
+						client->CONTINUE = true;
 					}
 				}
 			}
 
-			SelectObject(memdcGame, GetStockObject(DEFAULT_GUI_FONT));
-			SetBkMode(memdcGame, TRANSPARENT);
-			SetTextColor(memdcGame, RGB(0, 0, 0));
+			//SelectObject(memdcGame, GetStockObject(DEFAULT_GUI_FONT));
+			//SetBkMode(memdcGame, TRANSPARENT);
+			//SetTextColor(memdcGame, RGB(0, 0, 0));
 
-			TextOut(memdcGame, Game_WIDTH / 2, WIND_HEIGHT / 3, TEXT("Waiting for Server to start the game!"), _tcslen(TEXT("Waiting for Server to start the game!")));
+			//TextOut(memdcGame, Game_WIDTH / 2, WIND_HEIGHT / 3, TEXT("Waiting for Server to start the game!"), _tcslen(TEXT("Waiting for Server to start the game!")));
 
 			EndDialog(hWnd, 0);
 			return TRUE;
@@ -230,14 +284,15 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 					return TRUE;
 
 				case IDCANCEL:
-					message.id = local->getClientID();
-					message.type = LEAVE;
-
-					if (local != NULL) {
+					if (local != NULL &&!(local->isReady())) {
+						message.id = local->getClientID();
+						message.type = LEAVE;
 						local->sendMessage(message);
 						delete local;
 					}
-					if (remote != NULL) {
+					if (remote != NULL && !remote->isConnected()) {
+						message.id = local->getClientID();
+						message.type = LEAVE;
 						remote->sendMessage(message);
 						delete remote;
 					}
@@ -247,14 +302,16 @@ BOOL CALLBACK LoginProc(HWND hWnd, UINT messg,
 			break;
 
 		case WM_CLOSE:
-			message.id = local->getClientID();
-			message.type = LEAVE;
 
-			if (local != NULL) {
+			if (local != NULL && !(local->isReady())) {
+				message.id = local->getClientID();
+				message.type = LEAVE;
 				local->sendMessage(message);
 				delete local;
 			}
-			if (remote != NULL) {
+			if (remote != NULL && !remote->isConnected()) {
+				message.id = local->getClientID();
+				message.type = LEAVE;
 				remote->sendMessage(message);
 				delete remote;
 			}
@@ -312,6 +369,7 @@ BOOL CALLBACK Top10Proc(HWND hWnd, UINT messg,
 	return FALSE;
 }
 
+
 LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 	WPARAM wParam, LPARAM lParam) 
 {
@@ -319,45 +377,36 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 	PAINTSTRUCT ps;
 	LPMINMAXINFO lp;
 
-	static HBITMAP hbitmapGame;
-	static HBITMAP hbitmapData;
+	HBITMAP hbitmapData;
 
 	ClientMsg message = { 0 };
 
 	switch (messg) {
 		case WM_CREATE:
-			hBackground = (HBITMAP)LoadImage(NULL, TEXT("Images/background.bmp"), IMAGE_BITMAP, Game_WIDTH, WIND_HEIGHT, LR_LOADFROMFILE);
-			GetObject(hBackground, sizeof(background), &background);
+			LoadResources();
 
 			//Create double buffer
 			hdc = GetDC(hWnd);
 
 			memdcGame = CreateCompatibleDC(hdc);
 			memdcData = CreateCompatibleDC(hdc);
+			memdcAux = CreateCompatibleDC(hdc);
 
-			hbitmapGame = CreateCompatibleBitmap(hdc, Game_WIDTH, WIND_HEIGHT);
 			hbitmapData = CreateCompatibleBitmap(hdc, Info_WIDTH, WIND_HEIGHT);
 
-			SelectObject(memdcGame, hbitmapGame);
 			SelectObject(memdcData, hbitmapData);
-			SelectObject(memdcGame, GetStockObject(WHITE_BRUSH));
 			SelectObject(memdcData, GetStockObject(LTGRAY_BRUSH));
 
-			PatBlt(memdcGame, 0, 0, Game_WIDTH, WIND_HEIGHT, PATCOPY);
 			PatBlt(memdcData, 0, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, PATCOPY);
 
 			SelectObject(memdcGame, hBackground);
 
-			//clear window background 
-			//SelectObject(hdc, GetStockObject(WHITE_BRUSH));
-			//PatBlt(hdc, 0, 0, maxX, maxY, PATCOPY);
-
 			InvalidateRect(hWnd, NULL, FALSE);
-
 			ReleaseDC(hWnd, hdc);
 
 			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_LOGIN), NULL, (DLGPROC)LoginProc);
-
+			printGameDataOnScreen(hWnd);
+			
 			break;
 
 		case WM_COMMAND:
@@ -377,14 +426,17 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			break;
 
 		case WM_PAINT:
+			//InvalidateRect(hWnd, NULL, TRUE);
 			
-			hdc = BeginPaint(hWnd, &ps);
+			paint_hdc = BeginPaint(hWnd, &ps);
 
-			//Paint Game
-			BitBlt(hdc, 0, 0, Game_WIDTH, WIND_HEIGHT, memdcGame, 0, 0, SRCCOPY);
+			SelectObject(memdcGame, hBackground);
+			BitBlt(paint_hdc, 0, 0, Game_WIDTH, WIND_HEIGHT, memdcGame, 0, 0, SRCCOPY);
 			
+			//Paint Game			
+			printResources();
 			//Paint side info
-			BitBlt(hdc, Game_WIDTH + 15, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT -50, memdcData, 0, 0, SRCCOPY);
+			BitBlt(paint_hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0, 0, SRCCOPY);
 
 			EndPaint(hWnd, &ps);
 			break;
@@ -421,9 +473,9 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 		case WM_GETMINMAXINFO:
 			lp = (LPMINMAXINFO)lParam;
 			lp->ptMinTrackSize.x = WIND_WIDTH;
-			lp->ptMinTrackSize.y = WIND_HEIGHT;
+			lp->ptMinTrackSize.y = WIND_HEIGHT + 50;
 			lp->ptMaxTrackSize.x = WIND_WIDTH;
-			lp->ptMaxTrackSize.y = WIND_HEIGHT;
+			lp->ptMaxTrackSize.y = WIND_HEIGHT + 50;
 			break;
 
 		case WM_DESTROY:
@@ -449,4 +501,57 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 
 DWORD WINAPI ReceiveGameThread(LPVOID * args) {
 	return 0;
+}
+
+void LoadResources() {
+	hBackground = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP3), IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE);
+	hBall = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP4), IMAGE_BITMAP, 35, 35, LR_DEFAULTSIZE);
+	hNormalGoodTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP10), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+	hNormalDamagedTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP5), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+	hBonusTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP12), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+	hUnbrokenTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP9), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+	hPlatformPlayer = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP13), IMAGE_BITMAP, 100, 40, LR_DEFAULTSIZE);
+	hPlatformOthers = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP14), IMAGE_BITMAP, 100, 40, LR_DEFAULTSIZE);
+	hSpeedUpBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP6), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+	hSpeedDownBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP8), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+	hLifeBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP7), IMAGE_BITMAP, 40, 40, LR_DEFAULTSIZE);
+	hTripleBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP11), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
+}
+
+void printResources() {
+
+	SelectObject(memdcAux, hBall);
+	for (auto & ball:game.balls) {
+		if(ball.active)
+			BitBlt(paint_hdc, ball.posX, ball.posY, 35, 35, memdcAux, 0, 0, SRCCOPY);
+	}
+
+	for (auto &tile:game.tiles) {
+		if (tile.active) {
+			if (tile.resistance == -1) {
+				SelectObject(memdcAux, hUnbrokenTile);
+			}
+			else if (tile.bonus != NORMAL)
+				SelectObject(memdcAux, hBonusTile);
+			else {
+				if(tile.resistance > 2)
+					SelectObject(memdcAux, hNormalGoodTile);
+				else
+					SelectObject(memdcAux, hNormalDamagedTile);	
+			}
+		
+			BitBlt(paint_hdc, tile.posX, tile.posY, 50, 20, memdcAux, 0, 0, SRCCOPY);
+		}
+	}
+		
+	for (auto & player : game.players) {
+		if (!player.active)
+			continue;
+		if (_tcscmp(player.name,username) != 0)
+			SelectObject(memdcAux, hPlatformOthers);
+		else
+			SelectObject(memdcAux, hPlatformPlayer);
+		BitBlt(paint_hdc, player.posX, player.posY, 100, 40, memdcAux, 0, 0, SRCCOPY);
+	}
+	
 }
