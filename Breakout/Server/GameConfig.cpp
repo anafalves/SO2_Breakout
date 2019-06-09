@@ -5,7 +5,7 @@ GameConfig::GameConfig()
 	levelCount(DEFAULT_LEVEL_COUNT), speedUpCount(DEFAULT_SPEEDUP_COUNT), 
 	slowDownCount(DEFAULT_SLOWDOWN_COUNT), initialLives(DEFAULT_LIVES_COUNT), 
 	initialTileCount(DEFAULT_TILE_COUNT), movementSpeed(DEFAULT_MOVEMENT_SPEED), 
-	bonusDropRate(DEFAULT_BONUS_RATE / 100.0), ballTripleCount(DEFAULT_TRIPLE_COUNT)
+	bonusDropRate(DEFAULT_BONUS_RATE), ballTripleCount(DEFAULT_TRIPLE_COUNT)
 {}
 
 //Getters
@@ -46,7 +46,7 @@ int GameConfig::getSpeedUpCount() const {
 }
 
 double GameConfig::getBonusDropRate() const {
-	return bonusDropRate;
+	return bonusDropRate / 100.00;
 }
 
 //TDOD: new func, it's not being called from anywhere
@@ -137,11 +137,11 @@ void GameConfig::setSpeedUpCount(int count) {
 	speedUpCount = count;
 }
 
-void GameConfig::setBonusDropRate(double rate) {
-	if (rate < MIN_BONUS_RATE/100)
-		rate = MIN_BONUS_RATE/100;
-	else if(rate > MAX_BONUS_RATE/100)
-		rate = MAX_BONUS_RATE/100;
+void GameConfig::setBonusDropRate(int rate) {
+	if (rate < MIN_BONUS_RATE)
+		rate = MIN_BONUS_RATE;
+	else if(rate > MAX_BONUS_RATE)
+		rate = MAX_BONUS_RATE;
 
 	bonusDropRate = rate;
 }

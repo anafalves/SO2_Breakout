@@ -96,18 +96,19 @@ void GameDataManager::setupTiles(int difficulty) {
 	//for each lvl, the number of tiles increase, until they reach the maximum amount in the last available lvl
 	int tile_dif = TILES_MAX_COL_COUNT * TILES_MAX_LINE_COUNT - Server::config.getInitialTileCount();
 	int lvl_ratio = difficulty / Server::config.getLevelCount();
-	int tiles_number = tile_dif * lvl_ratio; 
+	int tiles_number = tile_dif * (lvl_ratio +1); 
 	//number of completed rows of tiles
 	int tiles_line_count = tiles_number / TILES_MAX_COL_COUNT; 
 	//number of tiles in the lasst line (only line uncompleted)
 	int tiles_left = tiles_number - tiles_line_count * TILES_MAX_COL_COUNT; 
 	int ocuppancyArray[TILES_MAX_LINE_COUNT][TILES_MAX_COL_COUNT] = { {0} };
 	
-	int n_undestructables = tiles_number / 3;
+	int n_undestructables = tiles_number / 4;
 
 	int bonus_sum = Server::config.getBallTripleCount() + Server::config.getSlowDownCount() +
 					Server::config.getSpeedUpCount() + Server::config.getExtraLifeCount();
-	int n_bonus_byRatio = (int) Server::config.getBonusDropRate() * tiles_number;
+	int n_bonus_byRatio = (int) (tiles_number* Server::config.getBonusDropRate());
+	int n_normals = tiles_number - n_bonus_byRatio - n_undestructables;
 
 	int  n_bonus_byType[N_BONUS_TYPES] = {
 		Server::config.getSpeedUpCount() * n_bonus_byRatio / bonus_sum,
@@ -115,8 +116,7 @@ void GameDataManager::setupTiles(int difficulty) {
 		Server::config.getExtraLifeCount() * n_bonus_byRatio / bonus_sum,
 		Server::config.getBallTripleCount() * n_bonus_byRatio / bonus_sum
 	};
-	
-	int n_normals = tiles_number - n_bonus_byRatio - n_undestructables;
+
 	int index = 0;
 	int x;
 	int y;
@@ -126,10 +126,11 @@ void GameDataManager::setupTiles(int difficulty) {
 	lockAccessGameData();
 
 	for (int i = 0; i < n_undestructables; i++) {
+		
 		do {
-			x = rand() % (TILES_MAX_COL_COUNT - 4) + 4;
+			x = rand() % TILES_MAX_COL_COUNT;
 			y = rand() % tiles_line_count;
-		} while (ocuppancyArray[x][y] != 0);
+		} while ((ocuppancyArray[x][y] != 0) && (x%2 != 0));
 		ocuppancyArray[x][y] = 1;
 
 		gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
@@ -145,7 +146,7 @@ void GameDataManager::setupTiles(int difficulty) {
 	
 	BonusType type = SPEED_UP;
 	for (int k = 0; k < N_BONUS_TYPES; k++) {
-		for (int i = 0; i < n_bonus_byType[0]; i++) {
+		for (int i = 0; i < n_bonus_byType[k]; i++) {
 			do {
 				x = rand() % TILES_MAX_COL_COUNT;
 				y = rand() % tiles_line_count;
@@ -155,7 +156,7 @@ void GameDataManager::setupTiles(int difficulty) {
 			gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
 			gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
 			gameData->tiles[index].active = true;
-			gameData->tiles[index].bonus = type + i;
+			gameData->tiles[index].bonus = type + k;
 			gameData->tiles[index].resistance = 1; //TODO: confirm
 			gameData->tiles[index].posX = x * TILE_DEFAULT_WIDTH;
 			gameData->tiles[index].posY = y * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
@@ -163,12 +164,12 @@ void GameDataManager::setupTiles(int difficulty) {
 			index++;
 		}
 	}
-
-	for (int i = 0; i < tiles_line_count; i++) {
-		for (int j = 0; j < TILES_MAX_COL_COUNT; j++) {
-			if (ocuppancyArray[i][j] != 0)
+	
+	for (int i = 0; i < TILES_MAX_COL_COUNT; i++) {
+		for (int j = 0; j < tiles_line_count ; j++) {
+			if (ocuppancyArray[i][j] == 1)
 				continue;
-			
+
 			gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
 			gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
 			gameData->tiles[index].active = true;
@@ -176,13 +177,14 @@ void GameDataManager::setupTiles(int difficulty) {
 			gameData->tiles[index].bonus = NORMAL;
 			gameData->tiles[index].resistance = 4; //TODO: confirm
 			gameData->tiles[index].posX = i * TILE_DEFAULT_WIDTH;
-			gameData->tiles[index].posY = y * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
+			gameData->tiles[index].posY = j * TILE_DEFAULT_HEIGHT + TILE_DEFAULT_SEPARATOR;
 			
 			index++;
 		}
 	}
 
 	for (int i = 0; i < tiles_left; i++) {
+
 		gameData->tiles[index].width = TILE_DEFAULT_WIDTH;
 		gameData->tiles[index].height = TILE_DEFAULT_HEIGHT;
 		gameData->tiles[index].active = true;
@@ -211,7 +213,7 @@ void GameDataManager::setupPlayers() {
 		gameData->players[i].lives = Server::config.getInitialLives();
 		gameData->players[i].points = 0;
 		gameData->players[i].posX = i + separator - PLAYER_DEFAULT_WIDTH/2;
-		gameData->players[i].posY = 30;
+		gameData->players[i].posY = MAX_GAME_HEIGHT - 60;
 	}
 
 	for (auto & clients : Server::clients.getClientArray()) {

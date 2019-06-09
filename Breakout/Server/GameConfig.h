@@ -58,7 +58,7 @@ private:
 	int initialLives;
 	int initialTileCount;
 	int movementSpeed;
-	double bonusDropRate;
+	int bonusDropRate;
 	int bonusTime;
 
 public:
@@ -85,7 +85,7 @@ public:
 	void setSpeedUpCount(int count);
 	void setBallTripleCount(int count);
 	void setExtraLifeCount(int count);
-	void setBonusDropRate(double rate);
+	void setBonusDropRate(int rate);
 	void setBonusTime(int time);
 };
 
