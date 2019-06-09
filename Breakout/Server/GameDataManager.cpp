@@ -236,7 +236,7 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 	selectedPlayerRight = selectedPlayer->posX + selectedPlayer->width;
 
 	//if it's on the edge of the world leaves without change
-	if (selectedPlayerLeft == MIN_GAME_WIDTH || selectedPlayerRight == MAX_GAME_WIDTH) {
+	if (selectedPlayerLeft <= MIN_GAME_WIDTH || selectedPlayerRight >= MAX_GAME_WIDTH) {
 		releaseAccessGameData();
 		return;
 	}
@@ -244,10 +244,10 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 	if (direction == LEFT)
 	{
 		for (const auto & player : gameData->players) {
-			if (!player.active)
+			if (!player.active || &player == selectedPlayer)
 				continue;
 
-			//if there is a collision ativates a flag
+			//if there is a collision leaves
 			if ((selectedPlayerLeft - speed) < player.posX + player.width) {
 				break;
 			}
@@ -258,7 +258,7 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 	else
 	{
 		for (const auto & player : gameData->players) {
-			if (!player.active)
+			if (!player.active || &player == selectedPlayer)
 				continue;
 
 			//if there is a collision ativates a flag
@@ -275,7 +275,6 @@ void GameDataManager::movePlayer(Player * selectedPlayer, int direction) {
 
 void GameDataManager::movePlayerPrecise(Player * selectedPlayer, int x) {
 	int selectedPlayerLeft, selectedPlayerRight;
-	bool collision = false;
 
 	lockAccessGameData();
 	
@@ -286,25 +285,24 @@ void GameDataManager::movePlayerPrecise(Player * selectedPlayer, int x) {
 	
 	//Verify if the positions are within bounds and fix them if they are not
 	if (x < MIN_GAME_WIDTH) {
-		x = MIN_GAME_WIDTH;
+		x = MIN_GAME_WIDTH + selectedPlayer->width;
 	}
 	else if (x + selectedPlayer->width > MAX_GAME_WIDTH) {
 		x -= (x + selectedPlayer->width) - MAX_GAME_WIDTH;
 	}
 
 	for (const auto & player : gameData->players) {
-		if (!player.active)
+		if (!player.active || &player == selectedPlayer)
 			continue;
 
 		//if there is a collision ativates a flag
 		if (x <= player.posX + player.width || x + selectedPlayer->width >= player.posX) {
-			collision = true;
 			break;
 		}
 	}
-
-	if (!collision)
-		selectedPlayer->posX = x;
+	
+	selectedPlayer->posX = x;
+	
 
 	releaseAccessGameData();
 }
