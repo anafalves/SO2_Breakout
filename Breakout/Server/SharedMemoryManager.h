@@ -4,7 +4,6 @@
 #include "Messages.h"
 #include "GeneralConstants.h"
 #include "GameData.h"
-#include "Spectator.h"
 
 class SharedMemoryManager
 {

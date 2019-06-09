@@ -57,7 +57,7 @@ public:
 	bool isGameRunning() const;
 
 	bool startGameDataBroadcaster();
-	bool startGame();
+	bool startGameThread();
 	bool startLocalClientHandler();
 	bool startRemoteConnectionHandler();
 	bool startBallThread();
