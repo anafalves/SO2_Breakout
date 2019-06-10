@@ -367,6 +367,9 @@ DWORD WINAPI BallManager(LPVOID args) {
 	tcout << "Ball Thread Ended" << endl;
 	CloseHandle(hTimer);
 
+	for (auto & client : Server::clients.getClientArray())
+		Server::topPlayers.addPlayer(*client->getPlayer());
+	
 	return 0;
 }
 

@@ -16,6 +16,7 @@
 LRESULT CALLBACK MainProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK LoginProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI ReceiveGameThread(LPVOID * args);
+void deleteResources();
 
 GameData game;
 
@@ -24,8 +25,8 @@ tstring staticTxtForMainWindow[2] = {
 			TEXT("Vida: "),
 			TEXT("Pontos: ")
 };
-tstring txtLife = TEXT("Life");
-tstring txtPoints = TEXT("Points");
+tstring txtLife = TEXT("Life: ");
+tstring txtPoints = TEXT("Points: ");
 tstring txtAux;
 int staticTxtMainWindPos[2][2] = { {80,500},{80,550} };
 int maxX = GetSystemMetrics(SM_CXSCREEN);
@@ -414,6 +415,8 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 
 			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_LOGIN), NULL, (DLGPROC)LoginProc);
 			printGameDataOnScreen(hWnd);
+
+			DeleteObject(hbitmapData);
 			
 			break;
 
@@ -441,10 +444,11 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			SelectObject(memdcGame, hBackground);
 			BitBlt(paint_hdc, 0, 0, Game_WIDTH, WIND_HEIGHT, memdcGame, 0, 0, SRCCOPY);
 			
-			//Paint Game			
+			//Paint Game
 			printResources();
+
 			//Paint side info
-			BitBlt(paint_hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0, 0, SRCCOPY);
+			TransparentBlt(paint_hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, RGB(255,255,255));
 
 			EndPaint(hWnd, &ps);
 			break;
@@ -457,7 +461,7 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			message.type = PRECISE_MOVE;
 			message.message.preciseMove = LOWORD(lParam);
 			client->sendMessage(message);
-			PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC);
+			PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC | SND_MEMORY);
 			break;
 
 		case WM_KEYDOWN:
@@ -489,15 +493,14 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			break;
 
 		case WM_DESTROY:
-			//TODO: Free bitmap memory 
-
 			message.id = client->getClientID();
 			message.type = LEAVE;
-			
 			client->sendMessage(message);
+
 			free(client);
 			DeleteDC(memdcData);
 			DeleteDC(memdcGame);
+			deleteResources();
 
 			PostQuitMessage(0);
 			break;
@@ -528,12 +531,26 @@ void LoadResources() {
 	hTripleBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP11), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 }
 
-void printResources() {
+void deleteResources() {
+	DeleteObject(hBackground);
+	DeleteObject(hBall);
+	DeleteObject(hNormalGoodTile);
+	DeleteObject(hNormalDamagedTile);
+	DeleteObject(hBonusTile);
+	DeleteObject(hUnbrokenTile);
+	DeleteObject(hPlatformOthers);
+	DeleteObject(hPlatformPlayer);
+	DeleteObject(hSpeedUpBonus);
+	DeleteObject(hSpeedDownBonus);
+	DeleteObject(hLifeBonus);
+	DeleteObject(hTripleBonus);
+}
 
+void printResources() {
 	SelectObject(memdcAux, hBall);
 	for (auto & ball:game.balls) {
 		if(ball.active)
-			BitBlt(paint_hdc, ball.posX, ball.posY, 35, 35, memdcAux, 0, 0, SRCCOPY);
+			TransparentBlt(paint_hdc, ball.posX, ball.posY, 35, 35, memdcAux, 0, 0, 35, 35, RGB(255,255,255));
 	}
 
 	for (auto &tile:game.tiles) {
@@ -550,7 +567,7 @@ void printResources() {
 					SelectObject(memdcAux, hNormalDamagedTile);	
 			}
 		
-			BitBlt(paint_hdc, tile.posX, tile.posY, 50, 20, memdcAux, 0, 0, SRCCOPY);
+			TransparentBlt(paint_hdc, tile.posX, tile.posY, 50, 20, memdcAux, 0, 0, 50, 20, RGB(255, 255, 255));
 		}
 	}
 		
@@ -562,9 +579,9 @@ void printResources() {
 		else {
 			SelectObject(memdcAux, hPlatformPlayer);
 			txtAux = txtLife + tto_string(player.lives);
-			TextOut(paint_hdc, staticTxtMainWindPos[0][0], staticTxtMainWindPos[0][1], txtAux.c_str(),txtAux.size());
-			txtAux = txtLife + tto_string(player.points);
-			TextOut(paint_hdc, staticTxtMainWindPos[1][0], staticTxtMainWindPos[1][1], txtAux.c_str(), txtAux.size());
+			TextOut(memdcData, staticTxtMainWindPos[0][0], staticTxtMainWindPos[0][1], txtAux.c_str(),txtAux.size());
+			txtAux = txtPoints + tto_string(player.points);
+			TextOut(memdcData, staticTxtMainWindPos[1][0], staticTxtMainWindPos[1][1], txtAux.c_str(), txtAux.size());
 		}
 			
 		BitBlt(paint_hdc, player.posX, player.posY, 100, 40, memdcAux, 0, 0, SRCCOPY);
