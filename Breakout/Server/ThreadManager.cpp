@@ -369,6 +369,8 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 	for (auto & client : Server::clients.getClientArray())
 		Server::topPlayers.addPlayer(*client->getPlayer());
+
+	Server::topPlayers.saveTop10();
 	
 	return 0;
 }

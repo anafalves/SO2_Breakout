@@ -448,7 +448,7 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			printResources();
 
 			//Paint side info
-			TransparentBlt(paint_hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, RGB(255,255,255));
+			BitBlt(paint_hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0, 0, SRCCOPY);
 
 			EndPaint(hWnd, &ps);
 			break;
