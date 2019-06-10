@@ -143,7 +143,6 @@ DWORD WINAPI BallManager(LPVOID args) {
 			if (!ball.active) {
 				continue;
 			}
-			ballAvailable = true;
 
 			if (ball.up) {
 				ball.posY += Server::config.getMovementSpeed();
@@ -220,23 +219,37 @@ DWORD WINAPI BallManager(LPVOID args) {
 			if (!tilesAvailable) {
 				gameData->gameState = NEXT_LEVEL;
 				Server::gameData->setGameEvent();
-				break;
+
+				Server::gameData->releaseAccessGameData();
+				Server::clients.broadcastGameData();
+				CloseHandle(hTimer);
+				return 0;
 			}
 
 			for (auto &player : gameData->players) {
 				if (!player.active || player.lives == 0) {
 					continue;
 				}
+
 				playersAlive = true;
 
-				//TODO: player movement code here
 
+				if (!(ballRight < player.posX || ballLeft > (player.posX + player.width) ||
+					ballBottom < player.posY || (ballTop > player.posY + player.height))) {
+					
+					ball.playerId = player.id;
+					ball.up = !ball.up;
+				}
 			}
 
 			if (!playersAlive) {
 				gameData->gameState = GAME_OVER;
 				Server::gameData->setGameEvent();
-				break;
+
+				Server::gameData->releaseAccessGameData();
+				Server::clients.broadcastGameData();
+				CloseHandle(hTimer);
+				return 0;
 			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
@@ -245,47 +258,41 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			if ((ball.posY + ball.height) >= MAX_GAME_HEIGHT) {
-				ball.up = !ball.up;
-				/*ball.active = false;
+				//ball.up = !ball.up;
+				ball.active = false;
 
 				if (ball.playerId >= 0)
-					gameData->players[ball.playerId].lives--;*/
+					gameData->players[ball.playerId].lives--;
 			}
 
 			if (ball.posY <= MIN_GAME_HEIGHT) {
 				ball.up = !ball.up;
 			}
+
+			ballAvailable = true;
 		}
 
-		//////Verify if there are still balls in the game
-		////ballAvailable = false;
-
-		////for (auto & ball : gameData->balls) {
-		////	if (ball.active)
-		////		ballAvailable = true;
-		////}
-		//////If theres no balls available, check for palyers with lives so another ball can spawn
-		////if (!ballAvailable) {
-		////	for (auto & player : gameData->players) {
-		////		if (player.active) {
-		////			if (player.lives > 0) {
-		////				Server::gameData->setupBall();
-		////				ballAvailable = true;
-		////				break;
-		////			}
-		////		}
-		////	}
-		////}
+		//If theres no balls available, check for palyers with lives so another ball can spawn
+		if (!ballAvailable) {
+			for (auto & player : gameData->players) {
+				if (player.active) {
+					if (player.lives > 0) {
+						Server::gameData->setupBall();
+						ballAvailable = true;
+						break;
+					}
+				}
+			}
+		}
 
 		Server::gameData->releaseAccessGameData();
 		Server::clients.broadcastGameData();
 
-		/*if (!ballAvailable) {
+		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
+			Server::gameData->setGameEvent();
+			break;
 		}
-
-		if (gameData->gameState != RUNNING)
-			break;*/
 	}
 
 	tcout << "Ball Thread Ended" << endl;
@@ -320,10 +327,12 @@ DWORD WINAPI GameThread(LPVOID args) {
 		
 		// 4 - wait for gameEvent
 		Server::gameData->waitForGameEvent();
-		if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
-			Server::threadManager.waitForBallThread();
-			continue; //Create a new level and all that great stuff
-		}
+		if (difficulty++ < 5)
+			continue;
+		//if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
+		//	Server::threadManager.waitForBallThread();
+		//	continue; //Create a new level and all that great stuff
+		//}
 		else { //if it's anyting else, then just quits
 			return 0; //TODO: take a look at this
 		}
