@@ -102,15 +102,14 @@ DWORD WINAPI BallManager(LPVOID args) {
 	LARGE_INTEGER liDueTime;
 	GameData * gameData;
 
-	bool hit;
 	bool ballAvailable;
 	bool playersAlive;
 	bool tilesAvailable;
 
 	int ballLeft, ballRight, ballTop, ballBottom;
 	int tileLeft, tileRight, tileTop, tileBottom;
-	int playerLeft, playerRight, playerTop, playerBottom;
 
+	int difLeft = 0, difRight = 0, difUp = 0, difDown = 0;
 	bool * CONTINUE = (bool *)args;
 
 	*CONTINUE = true;
@@ -139,12 +138,12 @@ DWORD WINAPI BallManager(LPVOID args) {
 		ballAvailable = false;
 		playersAlive = false;
 		tilesAvailable = false;
-		hit = false;
 
 		for (auto &ball : gameData->balls) {
 			if (!ball.active) {
 				continue;
 			}
+			ballAvailable = true;
 
 			if (ball.up) {
 				ball.posY += Server::config.getMovementSpeed();
@@ -160,114 +159,85 @@ DWORD WINAPI BallManager(LPVOID args) {
 				ball.posX -= Server::config.getMovementSpeed();
 			}
 
-			////TODO: verify if the Y it's in the tile zone before doing this
-			//ballLeft = ball.posX;
-			//ballRight = ball.posX + ball.width;
-			//ballTop = ball.posY;
-			//ballBottom = ball.posY + ball.height;
+			//TODO: verify if the Y it's in the tile zone before doing this
+			ballLeft = ball.posX;
+			ballRight = ball.posX + ball.width;
+			ballTop = ball.posY;
+			ballBottom = ball.posY + ball.height;
 
-			//for (auto &tile : gameData->tiles) {
-			//	if (!tile.active) {
-			//		continue;
-			//	}
+			for (auto &tile : gameData->tiles) {
+				if (!tile.active) {
+					continue;
+				}
 
-			//	if (tile.resistance != UNBREAKABLE)
-			//		tilesAvailable = true;
+				tilesAvailable = true;
 
-			//	tileLeft = tile.posX;
-			//	tileRight = tile.posX + tile.width;
-			//	tileTop = tile.posY;
-			//	tileBottom = tile.posY + tile.height;
+				/*if (tile.resistance != UNBREAKABLE)
+					tilesAvailable = true;*/
 
-			//	//if ball hits right or left of a tile
-			//	if ((ballLeft < tileRight && tileRight < ballRight) ||
-			//		(ballLeft < tileLeft && tileLeft < ballRight) &&
-			//		(tileTop <= ballTop || tileBottom >= ballBottom))
-			//	{
-			//		//ball.right = !ball.right;
-			//		//hit = true;
+				tileLeft = tile.posX;
+				tileRight = tile.posX + tile.width;
+				tileTop = tile.posY;
+				tileBottom = tile.posY + tile.height;
 
-			//		if (tile.resistance == UNBREAKABLE)
-			//			break;
+				//if ther's a collision:
+				if (!((ballRight < tileLeft || ballLeft > tileLeft) ||
+					(ballBottom < tileTop || ballTop > tileBottom))) {
 
-			//		if (--tile.resistance == 0)
-			//			tile.active = false;
+					difLeft = ballRight - tileLeft;
+					difRight = tileRight - ballLeft;
+					difUp = ballBottom - tileTop;
+					difDown = tileBottom - ballTop;
 
-			//		gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
 
-			//		if (tile.bonus)
-			//		{
-			//			//Server::threadManager.startBonusThread(&tile);
-			//		}
-			//	}
+					if ((difUp > difLeft && difUp > difRight) || (difDown > difLeft && difDown > difRight))
+						ball.up = !ball.up;
+					else if ((difUp < difLeft && difDown < difLeft) || (difUp < difRight && difDown < difRight))
+						ball.right = !ball.right;
+					else {
+						ball.up = !ball.up;
+						ball.right = !ball.right;
+					}
 
-			//	//if ball hits top or bottom of a tile
-			//	if ((ballTop < tileTop && tileTop < ballBottom) ||
-			//		(ballTop < tileBottom && tileBottom < ballBottom) &&
-			//		(tileLeft <= ballLeft || tileRight >= ballRight))
-			//	{
-			//		ball.up = !ball.up;
-			//		hit = true;
+					if (tile.resistance == UNBREAKABLE)
+						continue;
 
-			//		if (tile.resistance == UNBREAKABLE)
-			//			break;
+					if (--tile.resistance == 0)
+						tile.active = false;
 
-			//		if (--tile.resistance == 0)
-			//			tile.active = false;
+					gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
+				}
 
-			//		gameData->players[ball.playerId].points += POINTS_FOR_TILE_HIT;
 
-			//		if (tile.bonus)
-			//		{
-			//			Server::threadManager.startBonusThread(&tile);
-			//		}
-			//	}
-			//}
+				//	if (tile.bonus)
+				//	{
+				//		//Server::threadManager.startBonusThread(&tile);
+				//	}
+				//}
 
-			/*if (!tilesAvailable) {
+			}
+
+			if (!tilesAvailable) {
 				gameData->gameState = NEXT_LEVEL;
 				Server::gameData->setGameEvent();
 				break;
 			}
 
-			if (hit)
-				continue;*/
+			for (auto &player : gameData->players) {
+				if (!player.active || player.lives == 0) {
+					continue;
+				}
+				playersAlive = true;
 
-			//for (auto &player : gameData->players) {
-			//	if (!player.active || player.lives == 0) {
-			//		continue;
-			//	}
+				//TODO: player movement code here
 
-			//	playersAlive = true;
+			}
 
-			//	playerLeft = player.posX;
-			//	playerRight = player.posX + player.width;
-			//	playerTop = player.posY;
-			//	playerBottom = player.posY + player.height;
-
-			//	//ball hit player on top
-			//	if ((ballTop < playerTop && playerTop < ballBottom) &&
-			//		(playerLeft <= ballLeft || playerLeft <= ballRight))
-			//	{
-			//		ball.up = !ball.up;
-			//		ball.playerId = player.id;
-			//	}
-
-			//	if ((ballLeft < playerRight && playerRight < ballRight) ||
-			//		(ballLeft < playerLeft && playerLeft < ballRight) &&
-			//		(playerTop <= ballTop || playerBottom >= ballBottom))
-			//	{
-			//		ball.up = !ball.up;
-			//		ball.right = !ball.right;
-			//		ball.playerId = player.id;
-			//	}
-			//}
-
-			//if (!playersAlive) {
-			//	gameData->gameState = GAME_OVER;
-			//	Server::gameData->setGameEvent();
-			//	break;
-			//}
+			if (!playersAlive) {
+				gameData->gameState = GAME_OVER;
+				Server::gameData->setGameEvent();
+				break;
+			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
 			if ((ball.posX + ball.width) >= MAX_GAME_WIDTH || ball.posX <= MIN_GAME_WIDTH) {
