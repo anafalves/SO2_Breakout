@@ -5,6 +5,66 @@ enum GamePoints {
 	POINTS_FOR_TILE_HIT = 10,
 };
 
+DWORD WINAPI MovingBlocks(LPVOID args) {
+	bool *CONTINUE = (bool *)args;
+	*CONTINUE = true;
+
+	GameData * gameData = Server::gameData->getGameData();
+
+	HANDLE hTimer = NULL;
+	LARGE_INTEGER liDueTime;
+	liDueTime.QuadPart = 100LL;
+
+	int pos = 0;
+	bool down = true;
+
+	// Create an unnamed waitable timer.
+	hTimer = CreateWaitableTimer(NULL, FALSE, NULL);
+	if (NULL == hTimer)
+	{
+		tcout << "CreateWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	if (!SetWaitableTimer(hTimer, &liDueTime, 200, NULL, NULL, 0)) {
+		tcout << "SetWaitableTimer failed: " << GetLastError() << endl;
+		return -1;
+	}
+
+	while (*CONTINUE) {
+		WaitForSingleObject(hTimer, INFINITE);
+		Server::sharedMemory.waitForAllClientsReady();
+		Server::gameData->lockAccessGameData();
+		
+		if (gameData->gameState == GAME_OVER)
+		{
+			Server::gameData->releaseAccessGameData();
+			Server::clients.broadcastGameData();
+			break;
+		}
+
+		for (auto & tile : gameData->tiles) {
+			if(down)
+				tile.posY += Server::config.getMovementSpeed() * 2;
+			else
+				tile.posY -= Server::config.getMovementSpeed() * 2;
+		}
+
+		Server::gameData->releaseAccessGameData();
+		Server::clients.broadcastGameData();
+
+		if (pos >= 15) {
+			pos = 0;
+			down = !down;
+		}
+
+		pos++;
+	}
+	CloseHandle(hTimer);
+
+	return 0;
+}
+
 DWORD WINAPI BonusHandler(LPVOID args) {
 
 	GameData * gameData = Server::gameData->getGameData();
@@ -101,6 +161,7 @@ DWORD WINAPI BallManager(LPVOID args) {
 	HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
 	GameData * gameData;
+	HANDLE hMovingBlocks;
 
 	bool ballAvailable;
 	bool playersAlive;
@@ -129,6 +190,14 @@ DWORD WINAPI BallManager(LPVOID args) {
 		return -1;
 	}
 
+	hMovingBlocks = CreateThread(NULL, 0, MovingBlocks, CONTINUE, 0, NULL);
+	if (hMovingBlocks == NULL) {
+		//RIP
+		CloseHandle(hTimer);
+		return -1;
+	}
+	CloseHandle(hMovingBlocks);
+	
 	while (*CONTINUE)
 	{
 		WaitForSingleObject(hTimer, INFINITE);
@@ -143,7 +212,6 @@ DWORD WINAPI BallManager(LPVOID args) {
 			if (!ball.active) {
 				continue;
 			}
-			ballAvailable = true;
 
 			if (ball.up) {
 				ball.posY += Server::config.getMovementSpeed();
@@ -172,8 +240,8 @@ DWORD WINAPI BallManager(LPVOID args) {
 
 				tilesAvailable = true;
 
-				/*if (tile.resistance != UNBREAKABLE)
-					tilesAvailable = true;*/
+				if (tile.resistance != UNBREAKABLE)
+					tilesAvailable = true;
 
 				tileLeft = tile.posX;
 				tileRight = tile.posX + tile.width;
@@ -220,23 +288,37 @@ DWORD WINAPI BallManager(LPVOID args) {
 			if (!tilesAvailable) {
 				gameData->gameState = NEXT_LEVEL;
 				Server::gameData->setGameEvent();
-				break;
+
+				Server::gameData->releaseAccessGameData();
+				Server::clients.broadcastGameData();
+				CloseHandle(hTimer);
+				return 0;
 			}
 
 			for (auto &player : gameData->players) {
 				if (!player.active || player.lives == 0) {
 					continue;
 				}
+
 				playersAlive = true;
 
-				//TODO: player movement code here
 
+				if (!(ballRight < player.posX || ballLeft > (player.posX + player.width) ||
+					ballBottom < player.posY || (ballTop > player.posY + player.height))) {
+					
+					ball.playerId = player.id;
+					ball.up = !ball.up;
+				}
 			}
 
 			if (!playersAlive) {
 				gameData->gameState = GAME_OVER;
 				Server::gameData->setGameEvent();
-				break;
+
+				Server::gameData->releaseAccessGameData();
+				Server::clients.broadcastGameData();
+				CloseHandle(hTimer);
+				return 0;
 			}
 
 			//Verify if ball is in one of the of the limits, so it can change position
@@ -245,47 +327,41 @@ DWORD WINAPI BallManager(LPVOID args) {
 			}
 
 			if ((ball.posY + ball.height) >= MAX_GAME_HEIGHT) {
-				ball.up = !ball.up;
-				/*ball.active = false;
+				//ball.up = !ball.up;
+				ball.active = false;
 
 				if (ball.playerId >= 0)
-					gameData->players[ball.playerId].lives--;*/
+					gameData->players[ball.playerId].lives--;
 			}
 
 			if (ball.posY <= MIN_GAME_HEIGHT) {
 				ball.up = !ball.up;
 			}
+
+			ballAvailable = true;
 		}
 
-		//////Verify if there are still balls in the game
-		////ballAvailable = false;
-
-		////for (auto & ball : gameData->balls) {
-		////	if (ball.active)
-		////		ballAvailable = true;
-		////}
-		//////If theres no balls available, check for palyers with lives so another ball can spawn
-		////if (!ballAvailable) {
-		////	for (auto & player : gameData->players) {
-		////		if (player.active) {
-		////			if (player.lives > 0) {
-		////				Server::gameData->setupBall();
-		////				ballAvailable = true;
-		////				break;
-		////			}
-		////		}
-		////	}
-		////}
+		//If theres no balls available, check for palyers with lives so another ball can spawn
+		if (!ballAvailable) {
+			for (auto & player : gameData->players) {
+				if (player.active) {
+					if (player.lives > 0) {
+						Server::gameData->setupBall();
+						ballAvailable = true;
+						break;
+					}
+				}
+			}
+		}
 
 		Server::gameData->releaseAccessGameData();
 		Server::clients.broadcastGameData();
 
-		/*if (!ballAvailable) {
+		if (!ballAvailable) {
 			gameData->gameState = GAME_OVER;
+			Server::gameData->setGameEvent();
+			break;
 		}
-
-		if (gameData->gameState != RUNNING)
-			break;*/
 	}
 
 	tcout << "Ball Thread Ended" << endl;
@@ -301,7 +377,7 @@ DWORD WINAPI GameThread(LPVOID args) {
 	int difficulty = 0;
 	GameData * gameData = Server::gameData->getGameData();
 
-	while (*CONTINUE) {
+	//while (*CONTINUE) {
 		Server::gameData->setGameDataState(RUNNING);
 		Server::gameData->setupBall();
 
@@ -319,15 +395,17 @@ DWORD WINAPI GameThread(LPVOID args) {
 		Server::threadManager.startBallThread();
 		
 		// 4 - wait for gameEvent
-		Server::gameData->waitForGameEvent();
-		if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
-			Server::threadManager.waitForBallThread();
-			continue; //Create a new level and all that great stuff
-		}
-		else { //if it's anyting else, then just quits
-			return 0; //TODO: take a look at this
-		}
-	}
+		//Server::gameData->waitForGameEvent();
+		//if (difficulty++ < 5)
+			//continue;
+		//if (gameData->gameState == NEXT_LEVEL && difficulty < 10) {//TODO: maybe change this number, we can always pass a argument to compare here
+		//	Server::threadManager.waitForBallThread();
+		//	continue; //Create a new level and all that great stuff
+		//}
+		//else { //if it's anyting else, then just quits
+		//	return 0; //TODO: take a look at this
+		//}
+	//}
 
 	return 0;
 }
@@ -668,7 +746,7 @@ DWORD WINAPI RemoteConnectionHandler(LPVOID args) {
 	}
 
 	*CONTINUE = false;
-	WaitForMultipleObjects(clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
+	WaitForMultipleObjects((DWORD) clientThreads.size(), clientThreads.data(), TRUE, INFINITE);
 
 	tcout << "Remote client handler Thread ended" << endl;
 
@@ -806,7 +884,7 @@ void ThreadManager::waitForBallThread() {
 
 void ThreadManager::waitForBonusesThreads() {
 	if (hBonuses.size() > 0) {
-		WaitForMultipleObjects(hBonuses.size(), hBonuses.data(), TRUE, INFINITE);
+		WaitForMultipleObjects((DWORD)hBonuses.size(), hBonuses.data(), TRUE, INFINITE);
 	}
 
 	for (auto & thread : hBonuses) {

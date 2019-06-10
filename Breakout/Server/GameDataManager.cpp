@@ -73,7 +73,7 @@ void GameDataManager::generateLevel(int difficulty) {
 }
 
 void GameDataManager::setupBall() {
-	lockAccessGameData();
+	//lockAccessGameData();
 
 	for (auto &ball : gameData->balls) {
 		ball.active = false;
@@ -88,7 +88,7 @@ void GameDataManager::setupBall() {
 	gameData->balls->up = false;
 	gameData->balls->right = true;
 
-	releaseAccessGameData();
+	//releaseAccessGameData();
 }
 
 void GameDataManager::setupTiles(int difficulty) {
@@ -205,7 +205,7 @@ void GameDataManager::setupPlayers() {
 	lockAccessGameData();
 
 	int screenSize = MAX_GAME_WIDTH;
-	int separator = MAX_GAME_WIDTH /  (Server::clients.getClientArray().size() + 1) ;
+	int separator = (int)(MAX_GAME_WIDTH / (Server::clients.getClientArray().size() + 1)) ;
 
 	for (int i = 0; i < MAX_PLAYERS; i++) {
 		gameData->players[i].id = i;

@@ -55,11 +55,18 @@ int Server::startServer(tstring fileName) {
 }
 
 void Server::exitServer() {
+	threadManager.endBallThread();
+	Server::gameData->setGameDataState(SHUTDOWN);
+	Server::sharedMemory.waitForAllClientsReady();
+	Server::gameData->lockAccessGameData();
+	Server::clients.broadcastGameData();
+	Server::gameData->releaseAccessGameData();
+
 	SetEvent(sharedMemory.hExitEvent);
 
+	threadManager.endGame();
 	threadManager.endLocalClientHandler();
 	threadManager.endRemoteConnectionHandler();
-	threadManager.endBallThread();
 
 	threadManager.waitForRemoteConnectionThread();
 	threadManager.waitForLocalClientThread();
