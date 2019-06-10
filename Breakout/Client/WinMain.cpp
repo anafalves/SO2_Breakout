@@ -5,6 +5,7 @@
 #include "../ClientDLL/Communication.h"
 #include "resource.h"
 #include "../Server/GameData.h"
+#include "Mmsystem.h"
 
 
 #define WIND_WIDTH 1500
@@ -19,12 +20,14 @@ DWORD WINAPI ReceiveGameThread(LPVOID * args);
 GameData game;
 
 TCHAR szProgName[] = TEXT("Breakout");
-TCHAR staticTxtForMainWindow[4][50] = {
-			TEXT("Jogadores ativos: "),
+tstring staticTxtForMainWindow[2] = {
 			TEXT("Vida: "),
 			TEXT("Pontos: ")
 };
-int staticTxtMainWindPos[4][2] = { {80,100},{80,500},{80,550} };
+tstring txtLife = TEXT("Life");
+tstring txtPoints = TEXT("Points");
+tstring txtAux;
+int staticTxtMainWindPos[2][2] = { {80,500},{80,550} };
 int maxX = GetSystemMetrics(SM_CXSCREEN);
 int maxY = GetSystemMetrics(SM_CYSCREEN);
 
@@ -454,6 +457,7 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			message.type = PRECISE_MOVE;
 			message.message.preciseMove = LOWORD(lParam);
 			client->sendMessage(message);
+			PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC);
 			break;
 
 		case WM_KEYDOWN:
@@ -469,6 +473,7 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 				message.message.basicMove = RIGHT;
 				client->sendMessage(message);
 			}
+			PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC);
 			break;
 
 		case WM_ERASEBKGND:
@@ -554,8 +559,14 @@ void printResources() {
 			continue;
 		if (_tcscmp(player.name,username) != 0)
 			SelectObject(memdcAux, hPlatformOthers);
-		else
+		else {
 			SelectObject(memdcAux, hPlatformPlayer);
+			txtAux = txtLife + tto_string(player.lives);
+			TextOut(paint_hdc, staticTxtMainWindPos[0][0], staticTxtMainWindPos[0][1], txtAux.c_str(),txtAux.size());
+			txtAux = txtLife + tto_string(player.points);
+			TextOut(paint_hdc, staticTxtMainWindPos[1][0], staticTxtMainWindPos[1][1], txtAux.c_str(), txtAux.size());
+		}
+			
 		BitBlt(paint_hdc, player.posX, player.posY, 100, 40, memdcAux, 0, 0, SRCCOPY);
 	}
 	
