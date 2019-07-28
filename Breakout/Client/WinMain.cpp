@@ -120,14 +120,10 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR lpCmdLine, int
 DWORD WINAPI GetUpdates(LPVOID args) {
 	HWND hWnd = (HWND) args;
 
-	do {
-		continue;
-	} while (!CONTINUE && CONTINUE2);
-
 	while (CONTINUE) {
 		game = client->receiveBroadcast();
 	
-		InvalidateRect(hWnd, NULL, TRUE);	
+		InvalidateRect(hWnd, NULL, TRUE);
 	}
 	return 0;
 }
@@ -398,26 +394,19 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			hdc = GetDC(hWnd);
 
 			memdcGame = CreateCompatibleDC(hdc);
-			memdcData = CreateCompatibleDC(hdc);
 			memdcAux = CreateCompatibleDC(hdc);
+			hbitmapData = CreateCompatibleBitmap(hdc, Game_WIDTH, WIND_HEIGHT);
 
-			hbitmapData = CreateCompatibleBitmap(hdc, Info_WIDTH, WIND_HEIGHT);
-
-			SelectObject(memdcData, hbitmapData);
-			SelectObject(memdcData, GetStockObject(LTGRAY_BRUSH));
-
-			PatBlt(memdcData, 0, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, PATCOPY);
-
-			SelectObject(memdcGame, hBackground);
+			SelectObject(memdcGame, hbitmapData);
+			SelectObject(memdcGame, GetStockObject(LTGRAY_BRUSH));
 
 			InvalidateRect(hWnd, NULL, FALSE);
 			ReleaseDC(hWnd, hdc);
+			DeleteObject(hbitmapData);
 
 			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_LOGIN), NULL, (DLGPROC)LoginProc);
-			printGameDataOnScreen(hWnd);
 
-			DeleteObject(hbitmapData);
-			
+			printGameDataOnScreen(hWnd);
 			break;
 
 		case WM_COMMAND:
@@ -437,19 +426,11 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 			break;
 
 		case WM_PAINT:
-			//InvalidateRect(hWnd, NULL, TRUE);
-			
 			paint_hdc = BeginPaint(hWnd, &ps);
-
-			SelectObject(memdcGame, hBackground);
+			
+			printResources();
 			BitBlt(paint_hdc, 0, 0, Game_WIDTH, WIND_HEIGHT, memdcGame, 0, 0, SRCCOPY);
 			
-			//Paint Game
-			printResources();
-
-			//Paint side info
-			BitBlt(paint_hdc, Game_WIDTH, 0, WIND_WIDTH - Game_WIDTH, WIND_HEIGHT, memdcData, 0, 0, SRCCOPY);
-
 			EndPaint(hWnd, &ps);
 			break;
 
@@ -470,19 +451,19 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 				message.type = MOVE;
 				message.message.basicMove = LEFT;
 				client->sendMessage(message);
+				PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC);
 			}
 			else if (wParam == VK_RIGHT || wParam == rightKey) {
 				message.id = client->getClientID();
 				message.type = MOVE;
 				message.message.basicMove = RIGHT;
 				client->sendMessage(message);
+				PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC);
 			}
-			PlaySoundA((LPCSTR)"van-sliding-door.wav", NULL, SND_FILENAME | SND_ASYNC);
 			break;
 
 		case WM_ERASEBKGND:
 			return(1); // Prevent erasing the background to reduce flickering
-			break;
 		
 		case WM_GETMINMAXINFO:
 			lp = (LPMINMAXINFO)lParam;
@@ -507,13 +488,8 @@ LRESULT CALLBACK MainProc(HWND hWnd, UINT messg,
 
 		default:
 			return DefWindowProc(hWnd, messg, wParam, lParam);
-			break;
 	}
 	return(0);
-}
-
-DWORD WINAPI ReceiveGameThread(LPVOID * args) {
-	return 0;
 }
 
 void LoadResources() {
@@ -523,8 +499,8 @@ void LoadResources() {
 	hNormalDamagedTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP5), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hBonusTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP12), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hUnbrokenTile = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP9), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
-	hPlatformPlayer = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP13), IMAGE_BITMAP, 120, 30, LR_DEFAULTSIZE);
-	hPlatformOthers = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP14), IMAGE_BITMAP, 120, 30, LR_DEFAULTSIZE);
+	hPlatformPlayer = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP13), IMAGE_BITMAP, 100, 40, LR_DEFAULTSIZE);
+	hPlatformOthers = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP14), IMAGE_BITMAP, 100, 40, LR_DEFAULTSIZE);
 	hSpeedUpBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP6), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hSpeedDownBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP8), IMAGE_BITMAP, 50, 20, LR_DEFAULTSIZE);
 	hLifeBonus = (HBITMAP)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP7), IMAGE_BITMAP, 40, 40, LR_DEFAULTSIZE);
@@ -547,10 +523,13 @@ void deleteResources() {
 }
 
 void printResources() {
+	SelectObject(memdcAux, hBackground);
+	BitBlt(memdcGame,0,0, Game_WIDTH, WIND_HEIGHT, memdcAux, 0, 0, SRCCOPY);
+
 	SelectObject(memdcAux, hBall);
 	for (auto & ball:game.balls) {
 		if(ball.active)
-			TransparentBlt(paint_hdc, ball.posX, ball.posY, 35, 35, memdcAux, 0, 0, 35, 35, RGB(255,255,255));
+			TransparentBlt(memdcGame, ball.posX, ball.posY, 35, 35, memdcAux, 0, 0, 35, 35, RGB(255,255,255));
 	}
 
 	for (auto &tile:game.tiles) {
@@ -567,7 +546,7 @@ void printResources() {
 					SelectObject(memdcAux, hNormalDamagedTile);	
 			}
 		
-			TransparentBlt(paint_hdc, tile.posX, tile.posY, 50, 20, memdcAux, 0, 0, 50, 20, RGB(255, 255, 255));
+			TransparentBlt(memdcGame, tile.posX, tile.posY, 50, 20, memdcAux, 0, 0, 50, 20, RGB(255, 255, 255));
 		}
 	}
 		
@@ -579,12 +558,11 @@ void printResources() {
 		else {
 			SelectObject(memdcAux, hPlatformPlayer);
 			txtAux = txtLife + tto_string(player.lives);
-			TextOut(memdcData, staticTxtMainWindPos[0][0], staticTxtMainWindPos[0][1], txtAux.c_str(),txtAux.size());
+			TextOut(memdcGame, staticTxtMainWindPos[0][0], staticTxtMainWindPos[0][1], txtAux.c_str(),txtAux.size());
 			txtAux = txtPoints + tto_string(player.points);
-			TextOut(memdcData, staticTxtMainWindPos[1][0], staticTxtMainWindPos[1][1], txtAux.c_str(), txtAux.size());
+			TextOut(memdcGame, staticTxtMainWindPos[1][0], staticTxtMainWindPos[1][1], txtAux.c_str(), txtAux.size());
 		}
-			
-		BitBlt(paint_hdc, player.posX, player.posY, 100, 40, memdcAux, 0, 0, SRCCOPY);
+
+		BitBlt(memdcGame, player.posX, player.posY, 100, 40, memdcAux, 0, 0, SRCCOPY);
 	}
-	
 }
